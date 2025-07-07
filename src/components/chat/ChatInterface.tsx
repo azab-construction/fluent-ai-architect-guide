@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Bot, User, FileText, Github, HardDrive } from 'lucide-react';
+import { Send, Bot, User, FileText, Github, HardDrive, Settings, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AzureOpenAIService, configManager } from '@/lib/azure-openai';
+import { ApiKeyModal } from './ApiKeyModal';
+import { useToast } from '@/hooks/use-toast';
 
 interface Message {
   id: string;
@@ -19,6 +23,7 @@ interface Message {
 }
 
 export const ChatInterface = () => {
+  const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -30,9 +35,32 @@ export const ChatInterface = () => {
   ]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isConfigured, setIsConfigured] = useState(false);
+  const [showApiModal, setShowApiModal] = useState(false);
+  const [openAIService, setOpenAIService] = useState<AzureOpenAIService | null>(null);
+
+  useEffect(() => {
+    checkConfiguration();
+  }, []);
+
+  const checkConfiguration = () => {
+    const configured = configManager.isConfigured();
+    setIsConfigured(configured);
+    if (configured) {
+      const config = configManager.load();
+      if (config) {
+        setOpenAIService(new AzureOpenAIService(config));
+      }
+    }
+  };
 
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
+
+    if (!isConfigured || !openAIService) {
+      setShowApiModal(true);
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -42,24 +70,49 @@ export const ChatInterface = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentMessage = newMessage;
     setNewMessage('');
     setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      const chatHistory = messages.slice(-5).map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+
+      const response = await openAIService.sendMessage([
+        ...chatHistory,
+        { role: 'user', content: currentMessage }
+      ]);
+
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: 'شكراً لك على سؤالك. أقوم حالياً بالبحث في ملفاتك ومستودعاتك للعثور على الإجابة المناسبة...',
+        content: response,
         role: 'assistant',
         timestamp: new Date(),
-        sources: [
-          { type: 'github', name: 'project-repo/src/main.js' },
-          { type: 'drive', name: 'مستند المواصفات.docx' }
-        ]
+        sources: []
       };
+
       setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error('Chat error:', error);
+      toast({
+        title: "خطأ في الدردشة",
+        description: error instanceof Error ? error.message : "حدث خطأ غير متوقع",
+        variant: "destructive"
+      });
+      
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: 'عذراً، حدث خطأ في الاتصال. يرجى التحقق من إعدادات API والمحاولة مرة أخرى.',
+        role: 'assistant',
+        timestamp: new Date(),
+        sources: []
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const getSourceIcon = (type: string) => {
@@ -74,15 +127,35 @@ export const ChatInterface = () => {
     <div className="flex flex-col h-screen bg-background">
       {/* Header */}
       <div className="border-b bg-card p-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-ai-primary to-ai-accent flex items-center justify-center">
-            <Bot className="w-5 h-5 text-white" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-ai-primary to-ai-accent flex items-center justify-center">
+              <Bot className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold">منصة الدردشة الذكية</h1>
+              <p className="text-sm text-muted-foreground">مساعدك الذكي للملفات والأكواد</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-bold">منصة الدردشة الذكية</h1>
-            <p className="text-sm text-muted-foreground">مساعدك الذكي للملفات والأكواد</p>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowApiModal(true)}
+            className="gap-2"
+          >
+            <Settings className="w-4 h-4" />
+            {isConfigured ? 'تعديل الإعدادات' : 'إعداد API'}
+          </Button>
         </div>
+        
+        {!isConfigured && (
+          <Alert className="mt-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              يرجى إعداد Azure OpenAI API للبدء في استخدام المساعد الذكي
+            </AlertDescription>
+          </Alert>
+        )}
       </div>
 
       {/* Messages */}
@@ -174,6 +247,12 @@ export const ChatInterface = () => {
           </div>
         </div>
       </div>
+
+      <ApiKeyModal
+        open={showApiModal}
+        onOpenChange={setShowApiModal}
+        onConfigSaved={checkConfiguration}
+      />
     </div>
   );
 };
