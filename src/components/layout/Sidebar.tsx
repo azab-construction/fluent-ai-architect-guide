@@ -15,6 +15,7 @@ import {
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
+import logoImage from '@/assets/al-azab-logo.png';
 
 interface Integration {
   id: string;
@@ -83,8 +84,15 @@ export const Sidebar = () => {
     <div className="w-80 h-screen bg-card border-r flex flex-col">
       {/* Header */}
       <div className="p-4 border-b">
-        <h2 className="text-lg font-semibold mb-2">التكاملات</h2>
-        <p className="text-sm text-muted-foreground">
+        <div className="flex items-center gap-3 mb-3">
+          <img src={logoImage} alt="شعار الشركة" className="w-10 h-10 object-contain" />
+          <div>
+            <h2 className="text-lg font-semibold">الأزعب</h2>
+            <p className="text-xs text-muted-foreground">منصة الذكاء الاصطناعي</p>
+          </div>
+        </div>
+        <h3 className="text-sm font-medium mb-1">التكاملات</h3>
+        <p className="text-xs text-muted-foreground">
           إدارة اتصالاتك مع المنصات المختلفة
         </p>
       </div>
@@ -94,7 +102,7 @@ export const Sidebar = () => {
         <div className="space-y-2">
           <Button 
             variant={currentPath === '/' ? 'default' : 'ghost'} 
-            className={`w-full justify-start gap-2 ${currentPath === '/' ? 'bg-gradient-to-r from-ai-primary to-ai-accent' : ''}`}
+            className={`w-full justify-start gap-2 ${currentPath === '/' ? 'bg-gradient-to-r from-brand-black to-brand-yellow text-white' : ''}`}
             asChild
           >
             <Link to="/">
@@ -104,7 +112,7 @@ export const Sidebar = () => {
           </Button>
           <Button 
             variant={currentPath === '/integrations' ? 'default' : 'ghost'} 
-            className={`w-full justify-start gap-2 ${currentPath === '/integrations' ? 'bg-gradient-to-r from-ai-primary to-ai-accent' : ''}`}
+            className={`w-full justify-start gap-2 ${currentPath === '/integrations' ? 'bg-gradient-to-r from-brand-black to-brand-yellow text-white' : ''}`}
             asChild
           >
             <Link to="/integrations">
@@ -114,7 +122,7 @@ export const Sidebar = () => {
           </Button>
           <Button 
             variant={currentPath === '/analytics' ? 'default' : 'ghost'} 
-            className={`w-full justify-start gap-2 ${currentPath === '/analytics' ? 'bg-gradient-to-r from-ai-primary to-ai-accent' : ''}`}
+            className={`w-full justify-start gap-2 ${currentPath === '/analytics' ? 'bg-gradient-to-r from-brand-black to-brand-yellow text-white' : ''}`}
             asChild
           >
             <Link to="/analytics">
@@ -170,8 +178,8 @@ export const Sidebar = () => {
       {/* Footer */}
       <div className="p-4 border-t">
         <div className="text-xs text-muted-foreground text-center">
-          <p>منصة الدردشة الذكية v1.0</p>
-          <p className="mt-1">مدعوم بـ OpenAI و DeepSeek</p>
+          <p>منصة الأزعب للذكاء الاصطناعي v1.0</p>
+          <p className="mt-1">مدعوم بـ Azure OpenAI</p>
         </div>
       </div>
     </div>
