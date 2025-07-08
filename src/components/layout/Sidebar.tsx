@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +25,9 @@ interface Integration {
 }
 
 export const Sidebar = () => {
+  const location = useLocation();
+  const currentPath = location.pathname;
+  
   const integrations: Integration[] = [
     {
       id: 'github',
@@ -52,20 +56,20 @@ export const Sidebar = () => {
     switch (status) {
       case 'connected':
         return (
-          <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
+          <Badge variant="secondary" className="bg-success/10 text-success border-success/20">
             <CheckCircle className="w-3 h-3 mr-1" />
             متصل
           </Badge>
         );
       case 'disconnected':
         return (
-          <Badge variant="secondary" className="bg-gray-100 text-gray-600 border-gray-200">
+          <Badge variant="secondary" className="bg-muted text-muted-foreground border-muted">
             غير متصل
           </Badge>
         );
       case 'error':
         return (
-          <Badge variant="secondary" className="bg-red-100 text-red-800 border-red-200">
+          <Badge variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20">
             <AlertCircle className="w-3 h-3 mr-1" />
             خطأ
           </Badge>
@@ -88,21 +92,35 @@ export const Sidebar = () => {
       {/* Navigation */}
       <div className="p-4 border-b">
         <div className="space-y-2">
-          <Button variant="default" className="w-full justify-start gap-2 bg-gradient-to-r from-ai-primary to-ai-accent">
-            <MessageSquare className="w-4 h-4" />
-            الدردشة
+          <Button 
+            variant={currentPath === '/' ? 'default' : 'ghost'} 
+            className={`w-full justify-start gap-2 ${currentPath === '/' ? 'bg-gradient-to-r from-ai-primary to-ai-accent' : ''}`}
+            asChild
+          >
+            <Link to="/">
+              <MessageSquare className="w-4 h-4" />
+              الدردشة
+            </Link>
           </Button>
-          <Button variant="ghost" className="w-full justify-start gap-2">
-            <FileText className="w-4 h-4" />
-            الملفات
+          <Button 
+            variant={currentPath === '/integrations' ? 'default' : 'ghost'} 
+            className={`w-full justify-start gap-2 ${currentPath === '/integrations' ? 'bg-gradient-to-r from-ai-primary to-ai-accent' : ''}`}
+            asChild
+          >
+            <Link to="/integrations">
+              <Settings className="w-4 h-4" />
+              التكاملات
+            </Link>
           </Button>
-          <Button variant="ghost" className="w-full justify-start gap-2">
-            <BarChart3 className="w-4 h-4" />
-            التحليلات
-          </Button>
-          <Button variant="ghost" className="w-full justify-start gap-2">
-            <Settings className="w-4 h-4" />
-            الإعدادات
+          <Button 
+            variant={currentPath === '/analytics' ? 'default' : 'ghost'} 
+            className={`w-full justify-start gap-2 ${currentPath === '/analytics' ? 'bg-gradient-to-r from-ai-primary to-ai-accent' : ''}`}
+            asChild
+          >
+            <Link to="/analytics">
+              <BarChart3 className="w-4 h-4" />
+              التحليلات
+            </Link>
           </Button>
         </div>
       </div>

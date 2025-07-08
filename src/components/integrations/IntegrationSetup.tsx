@@ -146,20 +146,20 @@ export const IntegrationSetup = () => {
     switch (status) {
       case 'connected':
         return (
-          <Badge className="bg-green-100 text-green-800 border-green-200">
+          <Badge className="bg-success/10 text-success border-success/20">
             <CheckCircle className="w-3 h-3 mr-1" />
             متصل
           </Badge>
         );
       case 'disconnected':
         return (
-          <Badge variant="secondary" className="bg-gray-100 text-gray-600">
+          <Badge variant="secondary" className="bg-muted text-muted-foreground">
             غير متصل
           </Badge>
         );
       case 'error':
         return (
-          <Badge className="bg-red-100 text-red-800 border-red-200">
+          <Badge variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20">
             <AlertCircle className="w-3 h-3 mr-1" />
             خطأ في الاتصال
           </Badge>

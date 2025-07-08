@@ -73,8 +73,8 @@ export const ChatAnalytics = () => {
       <div className="grid md:grid-cols-4 gap-4">
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-              <MessageSquare className="w-5 h-5 text-blue-600" />
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <MessageSquare className="w-5 h-5 text-primary" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">إجمالي الرسائل</p>
@@ -85,8 +85,8 @@ export const ChatAnalytics = () => {
 
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-              <Clock className="w-5 h-5 text-green-600" />
+            <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
+              <Clock className="w-5 h-5 text-success" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">متوسط وقت الاستجابة</p>
@@ -97,8 +97,8 @@ export const ChatAnalytics = () => {
 
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-              <FileText className="w-5 h-5 text-purple-600" />
+            <div className="w-10 h-10 rounded-lg bg-ai-accent/10 flex items-center justify-center">
+              <FileText className="w-5 h-5 text-ai-accent" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">المصادر المستخدمة</p>
@@ -111,12 +111,12 @@ export const ChatAnalytics = () => {
 
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-orange-600" />
+            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-foreground" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">معدل النمو</p>
-              <p className="text-xl font-bold text-green-600">+23%</p>
+              <p className="text-xl font-bold text-success">+23%</p>
             </div>
           </div>
         </Card>
