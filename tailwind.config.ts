@@ -57,13 +57,6 @@ export default {
 					secondary: 'hsl(var(--ai-secondary))',
 					accent: 'hsl(var(--ai-accent))'
 				},
-				brand: {
-					yellow: 'hsl(var(--brand-yellow))',
-					black: 'hsl(var(--brand-black))',
-					white: 'hsl(var(--brand-white))',
-					light: 'hsl(var(--brand-light))',
-					'light-bg': 'hsl(var(--brand-light-bg))'
-				},
 				chat: {
 					user: 'hsl(var(--chat-user))',
 					ai: 'hsl(var(--chat-ai))'
