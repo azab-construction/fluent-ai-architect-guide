@@ -13,7 +13,8 @@ import {
   BarChart3,
   Plus,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Settings2
 } from 'lucide-react';
 
 interface Integration {
@@ -120,6 +121,16 @@ export const Sidebar = () => {
             <Link to="/analytics">
               <BarChart3 className="w-4 h-4" />
               التحليلات
+            </Link>
+          </Button>
+          <Button 
+            variant={currentPath === '/settings' ? 'default' : 'ghost'} 
+            className={`w-full justify-start gap-2 ${currentPath === '/settings' ? 'bg-gradient-to-r from-ai-primary to-ai-accent' : ''}`}
+            asChild
+          >
+            <Link to="/settings">
+              <Settings2 className="w-4 h-4" />
+              الإعدادات
             </Link>
           </Button>
         </div>
