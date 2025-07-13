@@ -6,8 +6,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, Bot, User, FileText, Github, HardDrive, Settings, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AzureOpenAIService, configManager } from '@/lib/azure-openai';
-import { ApiKeyModal } from './ApiKeyModal';
+import { AIService, aiConfigManager } from '@/lib/ai-providers';
+import { AIConfigModal } from './AIConfigModal';
 import { useToast } from '@/hooks/use-toast';
 
 interface Message {
@@ -37,19 +37,19 @@ export const ChatInterface = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isConfigured, setIsConfigured] = useState(false);
   const [showApiModal, setShowApiModal] = useState(false);
-  const [openAIService, setOpenAIService] = useState<AzureOpenAIService | null>(null);
+  const [aiService, setAIService] = useState<AIService | null>(null);
 
   useEffect(() => {
     checkConfiguration();
   }, []);
 
   const checkConfiguration = () => {
-    const configured = configManager.isConfigured();
+    const configured = aiConfigManager.isConfigured();
     setIsConfigured(configured);
     if (configured) {
-      const config = configManager.load();
+      const config = aiConfigManager.load();
       if (config) {
-        setOpenAIService(new AzureOpenAIService(config));
+        setAIService(new AIService(config));
       }
     }
   };
@@ -57,7 +57,7 @@ export const ChatInterface = () => {
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
 
-    if (!isConfigured || !openAIService) {
+    if (!isConfigured || !aiService) {
       setShowApiModal(true);
       return;
     }
@@ -80,7 +80,7 @@ export const ChatInterface = () => {
         content: msg.content
       }));
 
-      const response = await openAIService.sendMessage([
+      const response = await aiService.sendMessage([
         ...chatHistory,
         { role: 'user', content: currentMessage }
       ]);
@@ -152,7 +152,7 @@ export const ChatInterface = () => {
           <Alert className="mt-4">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              يرجى إعداد Azure OpenAI API للبدء في استخدام المساعد الذكي
+              يرجى إعداد مزود الذكاء الاصطناعي للبدء في استخدام المساعد الذكي
             </AlertDescription>
           </Alert>
         )}
@@ -248,7 +248,7 @@ export const ChatInterface = () => {
         </div>
       </div>
 
-      <ApiKeyModal
+      <AIConfigModal
         open={showApiModal}
         onOpenChange={setShowApiModal}
         onConfigSaved={checkConfiguration}
