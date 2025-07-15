@@ -7,7 +7,7 @@ import { Send, Bot, User, FileText, Github, HardDrive, Settings, AlertCircle } f
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AIService, aiConfigManager } from '@/lib/ai-providers';
-import { AIConfigModal } from './AIConfigModal';
+import { ApiKeyModal } from '@/components/chat/ApiKeyModal';
 import { useToast } from '@/hooks/use-toast';
 
 interface Message {
@@ -248,7 +248,7 @@ export const ChatInterface = () => {
         </div>
       </div>
 
-      <AIConfigModal
+      <ApiKeyModal
         open={showApiModal}
         onOpenChange={setShowApiModal}
         onConfigSaved={checkConfiguration}
