@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +8,6 @@ import {
   Github, 
   HardDrive, 
   Settings, 
-  FileText, 
   Users, 
   BarChart3,
   Plus,
@@ -16,6 +15,7 @@ import {
   AlertCircle,
   Settings2
 } from 'lucide-react';
+import { integrationStorage } from '@/lib/integration-storage';
 
 interface Integration {
   id: string;
@@ -27,31 +27,48 @@ interface Integration {
 
 export const Sidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const currentPath = location.pathname;
   
-  const integrations: Integration[] = [
-    {
-      id: 'github',
-      name: 'GitHub',
-      icon: <Github className="w-5 h-5" />,
-      status: 'connected',
-      description: 'مستودعات الأكواد والمشاريع'
-    },
-    {
-      id: 'drive',
-      name: 'Google Drive',
-      icon: <HardDrive className="w-5 h-5" />,
-      status: 'disconnected',
-      description: 'الملفات والمستندات'
-    },
-    {
-      id: 'company',
-      name: 'خادم الشركة',
-      icon: <Users className="w-5 h-5" />,
-      status: 'error',
-      description: 'API الشركة الداخلي'
-    }
-  ];
+  const [integrations, setIntegrations] = useState<Integration[]>([]);
+
+  useEffect(() => {
+    const loadStatuses = () => {
+      setIntegrations([
+        {
+          id: 'github',
+          name: 'GitHub',
+          icon: <Github className="w-5 h-5" />,
+          status: integrationStorage.getStatus('github'),
+          description: 'مستودعات الأكواد والمشاريع'
+        },
+        {
+          id: 'drive',
+          name: 'Google Drive',
+          icon: <HardDrive className="w-5 h-5" />,
+          status: integrationStorage.getStatus('drive'),
+          description: 'الملفات والمستندات'
+        },
+        {
+          id: 'company',
+          name: 'خادم الشركة',
+          icon: <Users className="w-5 h-5" />,
+          status: integrationStorage.getStatus('company'),
+          description: 'API الشركة الداخلي'
+        }
+      ]);
+    };
+
+    loadStatuses();
+    // Listen for storage changes
+    const handler = () => loadStatuses();
+    window.addEventListener('storage', handler);
+    window.addEventListener('integrations-updated', handler);
+    return () => {
+      window.removeEventListener('storage', handler);
+      window.removeEventListener('integrations-updated', handler);
+    };
+  }, []);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -141,13 +158,17 @@ export const Sidebar = () => {
         <div className="space-y-3">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium">التكاملات المتاحة</h3>
-            <Button size="sm" variant="outline" className="h-7 px-2">
+            <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => navigate('/integrations')}>
               <Plus className="w-3 h-3" />
             </Button>
           </div>
           
           {integrations.map((integration) => (
-            <Card key={integration.id} className="p-3 hover:shadow-md transition-shadow">
+            <Card 
+              key={integration.id} 
+              className="p-3 hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => navigate('/integrations')}
+            >
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
                   {integration.icon}
@@ -162,15 +183,6 @@ export const Sidebar = () => {
                   <p className="text-xs text-muted-foreground">
                     {integration.description}
                   </p>
-                  <div className="mt-2">
-                    <Button 
-                      size="sm" 
-                      variant={integration.status === 'connected' ? 'outline' : 'default'} 
-                      className="h-7 text-xs"
-                    >
-                      {integration.status === 'connected' ? 'إعادة التكوين' : 'ربط'}
-                    </Button>
-                  </div>
                 </div>
               </div>
             </Card>
