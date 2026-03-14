@@ -74,8 +74,10 @@ export const ChatInterface = () => {
     const currentMessage = newMessage;
     setNewMessage('');
     setIsLoading(true);
+    analyticsStorage.trackMessage();
 
     try {
+      const startTime = Date.now();
       const chatHistory = messages.slice(-5).map(msg => ({
         role: msg.role,
         content: msg.content
@@ -85,6 +87,9 @@ export const ChatInterface = () => {
         ...chatHistory,
         { role: 'user', content: currentMessage }
       ]);
+
+      const responseTime = Date.now() - startTime;
+      analyticsStorage.trackResponse(responseTime);
 
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
