@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AIService, aiConfigManager } from '@/lib/ai-providers';
 import { ApiKeyModal } from '@/components/chat/ApiKeyModal';
 import { useToast } from '@/hooks/use-toast';
+import { analyticsStorage } from '@/lib/integration-storage';
 
 interface Message {
   id: string;
