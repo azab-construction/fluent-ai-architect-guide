@@ -97,7 +97,7 @@ export const IntegrationSetup = () => {
     loadIntegrations();
   }, []);
 
-  const loadIntegrations = () => {
+  const loadIntegrations = async () => {
     const configs = DEFAULT_INTEGRATIONS.map(def => {
       const saved = integrationStorage.load(def.id);
       return {
@@ -110,7 +110,15 @@ export const IntegrationSetup = () => {
 
     // Load saved form values
     const gh = integrationStorage.load('github');
-    if (gh?.apiKey) setGithubToken(gh.apiKey);
+    if (gh?.apiKey) {
+      setGithubToken(gh.apiKey);
+      if (gh.status === 'connected') {
+        try {
+          const user = await githubAPI.getUser();
+          setGithubUser(user);
+        } catch { /* ignore */ }
+      }
+    }
 
     const dr = integrationStorage.load('drive');
     if (dr?.apiKey) setDriveClientId(dr.apiKey);
