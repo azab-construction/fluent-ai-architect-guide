@@ -157,6 +157,9 @@ export const IntegrationSetup = () => {
         success = res.ok;
         if (!success) throw new Error(`GitHub API: ${res.status}`);
         
+        const userData = await res.json();
+        setGithubUser(userData);
+        
         integrationStorage.save({
           id: 'github',
           status: 'connected',
