@@ -25,6 +25,11 @@ interface ChatMessage {
   content: string;
 }
 
+interface SendOptions {
+  temperature?: number;
+  maxTokens?: number;
+}
+
 export class AIService {
   private config: AIConfig;
 
@@ -32,16 +37,19 @@ export class AIService {
     this.config = config;
   }
 
-  async sendMessage(messages: ChatMessage[]): Promise<string> {
+  async sendMessage(messages: ChatMessage[], options?: SendOptions): Promise<string> {
+    const temp = options?.temperature ?? 0.7;
+    const maxTokens = options?.maxTokens ?? 1000;
+
     if (this.config.provider === 'openai') {
-      return this.sendOpenAIMessage(messages, this.config);
+      return this.sendOpenAIMessage(messages, this.config, temp, maxTokens);
     } else if (this.config.provider === 'deepseek') {
-      return this.sendDeepSeekMessage(messages, this.config);
+      return this.sendDeepSeekMessage(messages, this.config, temp, maxTokens);
     }
     throw new Error('مزود الذكاء الاصطناعي غير مدعوم');
   }
 
-  private async sendOpenAIMessage(messages: ChatMessage[], config: OpenAIConfig): Promise<string> {
+  private async sendOpenAIMessage(messages: ChatMessage[], config: OpenAIConfig, temperature: number, maxTokens: number): Promise<string> {
     const url = `${config.endpoint}/openai/deployments/${config.deployment}/chat/completions?api-version=${config.apiVersion}`;
     
     try {
@@ -59,8 +67,8 @@ export class AIService {
             },
             ...messages
           ],
-          max_tokens: 1000,
-          temperature: 0.7,
+          max_tokens: maxTokens,
+          temperature,
           top_p: 0.9,
         }),
       });
@@ -78,7 +86,7 @@ export class AIService {
     }
   }
 
-  private async sendDeepSeekMessage(messages: ChatMessage[], config: DeepSeekConfig): Promise<string> {
+  private async sendDeepSeekMessage(messages: ChatMessage[], config: DeepSeekConfig, temperature: number, maxTokens: number): Promise<string> {
     const baseUrl = config.baseUrl || 'https://api.deepseek.com';
     const url = `${baseUrl}/chat/completions`;
     
@@ -98,8 +106,8 @@ export class AIService {
             },
             ...messages
           ],
-          max_tokens: 1000,
-          temperature: 0.7,
+          max_tokens: maxTokens,
+          temperature,
           stream: false,
         }),
       });

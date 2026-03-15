@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { 
   Github, 
   HardDrive, 
@@ -19,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { integrationStorage, IntegrationData } from '@/lib/integration-storage';
+import { githubAPI, GitHubUser } from '@/lib/github-api';
 
 interface IntegrationConfig {
   id: string;
@@ -89,12 +91,13 @@ export const IntegrationSetup = () => {
   const [companyKey, setCompanyKey] = useState('');
 
   const [integrations, setIntegrations] = useState<IntegrationConfig[]>([]);
+  const [githubUser, setGithubUser] = useState<GitHubUser | null>(null);
 
   useEffect(() => {
     loadIntegrations();
   }, []);
 
-  const loadIntegrations = () => {
+  const loadIntegrations = async () => {
     const configs = DEFAULT_INTEGRATIONS.map(def => {
       const saved = integrationStorage.load(def.id);
       return {
@@ -107,7 +110,15 @@ export const IntegrationSetup = () => {
 
     // Load saved form values
     const gh = integrationStorage.load('github');
-    if (gh?.apiKey) setGithubToken(gh.apiKey);
+    if (gh?.apiKey) {
+      setGithubToken(gh.apiKey);
+      if (gh.status === 'connected') {
+        try {
+          const user = await githubAPI.getUser();
+          setGithubUser(user);
+        } catch { /* ignore */ }
+      }
+    }
 
     const dr = integrationStorage.load('drive');
     if (dr?.apiKey) setDriveClientId(dr.apiKey);
@@ -145,6 +156,9 @@ export const IntegrationSetup = () => {
         });
         success = res.ok;
         if (!success) throw new Error(`GitHub API: ${res.status}`);
+        
+        const userData = await res.json();
+        setGithubUser(userData);
         
         integrationStorage.save({
           id: 'github',
@@ -329,6 +343,24 @@ export const IntegrationSetup = () => {
                   
                   {integration.id === 'github' && (
                     <div className="space-y-3">
+                      {githubUser && integration.status === 'connected' && (
+                        <Card className="p-3 bg-accent/30 border-primary/20">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="w-10 h-10">
+                              <AvatarImage src={githubUser.avatar_url} alt={githubUser.login} />
+                              <AvatarFallback>{githubUser.login[0]?.toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium text-sm">{githubUser.name || githubUser.login}</p>
+                              <p className="text-xs text-muted-foreground">@{githubUser.login} · {githubUser.public_repos} مستودع</p>
+                            </div>
+                            <Badge className="ml-auto bg-success/10 text-success border-success/20 text-xs">
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              متصل
+                            </Badge>
+                          </div>
+                        </Card>
+                      )}
                       <div>
                         <Label htmlFor="github-token">Personal Access Token</Label>
                         <Input
