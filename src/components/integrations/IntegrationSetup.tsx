@@ -343,6 +343,24 @@ export const IntegrationSetup = () => {
                   
                   {integration.id === 'github' && (
                     <div className="space-y-3">
+                      {githubUser && integration.status === 'connected' && (
+                        <Card className="p-3 bg-accent/30 border-primary/20">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="w-10 h-10">
+                              <AvatarImage src={githubUser.avatar_url} alt={githubUser.login} />
+                              <AvatarFallback>{githubUser.login[0]?.toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium text-sm">{githubUser.name || githubUser.login}</p>
+                              <p className="text-xs text-muted-foreground">@{githubUser.login} · {githubUser.public_repos} مستودع</p>
+                            </div>
+                            <Badge className="ml-auto bg-success/10 text-success border-success/20 text-xs">
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              متصل
+                            </Badge>
+                          </div>
+                        </Card>
+                      )}
                       <div>
                         <Label htmlFor="github-token">Personal Access Token</Label>
                         <Input
