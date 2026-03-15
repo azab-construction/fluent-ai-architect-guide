@@ -8,14 +8,17 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AIService, aiConfigManager } from '@/lib/ai-providers';
 import { ApiKeyModal } from '@/components/chat/ApiKeyModal';
+import { FileUploadButton } from '@/components/chat/FileUploadButton';
 import { useToast } from '@/hooks/use-toast';
 import { analyticsStorage } from '@/lib/integration-storage';
+import { ParsedFile } from '@/lib/file-parser';
 
 interface Message {
   id: string;
   content: string;
   role: 'user' | 'assistant';
   timestamp: Date;
+  fileName?: string;
   sources?: Array<{
     type: 'github' | 'drive' | 'document';
     name: string;
@@ -28,7 +31,7 @@ export const ChatInterface = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: 'مرحباً! أنا مساعدك الذكي. يمكنني مساعدتك في تحليل ملفاتك من Google Drive وأكوادك من GitHub. كيف يمكنني مساعدتك اليوم؟',
+      content: 'مرحباً! أنا مساعدك الذكي. يمكنني مساعدتك في تحليل ملفاتك (PDF, TXT, DOCX) وأكوادك من GitHub. كيف يمكنني مساعدتك اليوم؟',
       role: 'assistant',
       timestamp: new Date(),
       sources: []
@@ -39,6 +42,7 @@ export const ChatInterface = () => {
   const [isConfigured, setIsConfigured] = useState(false);
   const [showApiModal, setShowApiModal] = useState(false);
   const [aiService, setAIService] = useState<AIService | null>(null);
+  const [attachedFile, setAttachedFile] = useState<ParsedFile | null>(null);
 
   useEffect(() => {
     checkConfiguration();
@@ -56,23 +60,39 @@ export const ChatInterface = () => {
   };
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() && !attachedFile) return;
 
     if (!isConfigured || !aiService) {
       setShowApiModal(true);
       return;
     }
 
+    // Build the message content
+    let userContent = newMessage.trim();
+    let displayContent = userContent;
+    const currentFile = attachedFile;
+
+    if (currentFile) {
+      const fileContext = `[ملف مرفق: ${currentFile.name}]\n\n--- محتوى الملف ---\n${currentFile.content}\n--- نهاية المحتوى ---`;
+      if (userContent) {
+        userContent = `${userContent}\n\n${fileContext}`;
+      } else {
+        userContent = `حلل هذا الملف:\n\n${fileContext}`;
+        displayContent = `📎 ${currentFile.name} - حلل هذا الملف`;
+      }
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
-      content: newMessage,
+      content: displayContent || `📎 ${currentFile?.name}`,
       role: 'user',
-      timestamp: new Date()
+      timestamp: new Date(),
+      fileName: currentFile?.name,
     };
 
     setMessages(prev => [...prev, userMessage]);
-    const currentMessage = newMessage;
     setNewMessage('');
+    setAttachedFile(null);
     setIsLoading(true);
     analyticsStorage.trackMessage();
 
@@ -85,7 +105,7 @@ export const ChatInterface = () => {
 
       const response = await aiService.sendMessage([
         ...chatHistory,
-        { role: 'user', content: currentMessage }
+        { role: 'user', content: userContent }
       ]);
 
       const responseTime = Date.now() - startTime;
@@ -96,7 +116,7 @@ export const ChatInterface = () => {
         content: response,
         role: 'assistant',
         timestamp: new Date(),
-        sources: []
+        sources: currentFile ? [{ type: 'document', name: currentFile.name }] : []
       };
 
       setMessages(prev => [...prev, aiMessage]);
@@ -190,7 +210,13 @@ export const ChatInterface = () => {
                     ? 'bg-chat-user border-primary/20' 
                     : 'bg-chat-ai border-ai-primary/20'
                 }`}>
-                  <p className="text-sm leading-relaxed" dir="auto">
+                  {message.fileName && (
+                    <Badge variant="secondary" className="text-xs mb-2 gap-1">
+                      <FileText className="w-3 h-3" />
+                      {message.fileName}
+                    </Badge>
+                  )}
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap" dir="auto">
                     {message.content}
                   </p>
                   
@@ -221,7 +247,7 @@ export const ChatInterface = () => {
               <Card className="p-4 bg-chat-ai border-ai-primary/20">
                 <div className="flex items-center gap-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-ai-primary"></div>
-                  <p className="text-sm text-muted-foreground">جاري الكتابة...</p>
+                  <p className="text-sm text-muted-foreground">جاري التحليل...</p>
                 </div>
               </Card>
             </div>
@@ -232,20 +258,24 @@ export const ChatInterface = () => {
       {/* Input */}
       <div className="border-t bg-card p-4">
         <div className="max-w-4xl mx-auto">
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            <FileUploadButton
+              attachedFile={attachedFile}
+              onFileAttached={setAttachedFile}
+              isLoading={isLoading}
+            />
             <div className="flex-1 relative">
               <Input
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="اكتب رسالتك هنا..."
-                className="pr-12"
+                placeholder={attachedFile ? "أضف تعليمات للتحليل أو أرسل مباشرة..." : "اكتب رسالتك هنا..."}
                 dir="auto"
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
               />
             </div>
             <Button 
               onClick={handleSendMessage}
-              disabled={!newMessage.trim() || isLoading}
+              disabled={(!newMessage.trim() && !attachedFile) || isLoading}
               className="bg-gradient-to-r from-ai-primary to-ai-accent hover:opacity-90"
             >
               <Send className="w-4 h-4" />
