@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { 
   Github, 
   HardDrive, 
@@ -19,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { integrationStorage, IntegrationData } from '@/lib/integration-storage';
+import { githubAPI, GitHubUser } from '@/lib/github-api';
 
 interface IntegrationConfig {
   id: string;
