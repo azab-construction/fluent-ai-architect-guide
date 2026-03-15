@@ -90,7 +90,7 @@ export const IntegrationSetup = () => {
   const [companyEndpoint, setCompanyEndpoint] = useState('');
   const [companyKey, setCompanyKey] = useState('');
 
-  const [integrations, setIntegrations] = useState<IntegrationConfig[]>([]);
+  const [githubUser, setGithubUser] = useState<GitHubUser | null>(null);
 
   useEffect(() => {
     loadIntegrations();
