@@ -9,8 +9,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AIService, aiConfigManager } from '@/lib/ai-providers';
 import { ApiKeyModal } from '@/components/chat/ApiKeyModal';
 import { FileUploadButton } from '@/components/chat/FileUploadButton';
+import { GitHubBrowser } from '@/components/chat/GitHubBrowser';
 import { useToast } from '@/hooks/use-toast';
 import { analyticsStorage } from '@/lib/integration-storage';
+import { githubAPI } from '@/lib/github-api';
 import { ParsedFile } from '@/lib/file-parser';
 
 interface Message {
@@ -24,6 +26,15 @@ interface Message {
     name: string;
     url?: string;
   }>;
+}
+
+// Load user preferences from localStorage
+function getUserPreferences() {
+  try {
+    const saved = localStorage.getItem('user-preferences');
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return { temperature: 0.7, maxTokens: 1000, language: 'ar' };
 }
 
 export const ChatInterface = () => {
@@ -41,11 +52,18 @@ export const ChatInterface = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isConfigured, setIsConfigured] = useState(false);
   const [showApiModal, setShowApiModal] = useState(false);
+  const [showGitHubBrowser, setShowGitHubBrowser] = useState(false);
   const [aiService, setAIService] = useState<AIService | null>(null);
   const [attachedFile, setAttachedFile] = useState<ParsedFile | null>(null);
+  const [githubConnected, setGithubConnected] = useState(false);
 
   useEffect(() => {
     checkConfiguration();
+    setGithubConnected(githubAPI.isConnected());
+
+    const handleIntUpdate = () => setGithubConnected(githubAPI.isConnected());
+    window.addEventListener('integrations-updated', handleIntUpdate);
+    return () => window.removeEventListener('integrations-updated', handleIntUpdate);
   }, []);
 
   const checkConfiguration = () => {
@@ -59,6 +77,18 @@ export const ChatInterface = () => {
     }
   };
 
+  const handleGitHubFileSelected = (content: string, fileName: string, repoName: string) => {
+    const truncated = content.length > 15000
+      ? content.slice(0, 15000) + '\n\n... [تم اقتطاع المحتوى]'
+      : content;
+    setAttachedFile({
+      name: `${repoName}/${fileName}`,
+      type: fileName.split('.').pop() || 'txt',
+      content: truncated,
+      size: content.length,
+    });
+  };
+
   const handleSendMessage = async () => {
     if (!newMessage.trim() && !attachedFile) return;
 
@@ -66,6 +96,8 @@ export const ChatInterface = () => {
       setShowApiModal(true);
       return;
     }
+
+    const prefs = getUserPreferences();
 
     // Build the message content
     let userContent = newMessage.trim();
@@ -103,10 +135,10 @@ export const ChatInterface = () => {
         content: msg.content
       }));
 
-      const response = await aiService.sendMessage([
-        ...chatHistory,
-        { role: 'user', content: userContent }
-      ]);
+      const response = await aiService.sendMessage(
+        [...chatHistory, { role: 'user', content: userContent }],
+        { temperature: prefs.temperature, maxTokens: prefs.maxTokens }
+      );
 
       const responseTime = Date.now() - startTime;
       analyticsStorage.trackResponse(responseTime);
@@ -116,7 +148,7 @@ export const ChatInterface = () => {
         content: response,
         role: 'assistant',
         timestamp: new Date(),
-        sources: currentFile ? [{ type: 'document', name: currentFile.name }] : []
+        sources: currentFile ? [{ type: currentFile.name.includes('/') ? 'github' : 'document', name: currentFile.name }] : []
       };
 
       setMessages(prev => [...prev, aiMessage]);
@@ -212,7 +244,7 @@ export const ChatInterface = () => {
                 }`}>
                   {message.fileName && (
                     <Badge variant="secondary" className="text-xs mb-2 gap-1">
-                      <FileText className="w-3 h-3" />
+                      {message.fileName.includes('/') ? <Github className="w-3 h-3" /> : <FileText className="w-3 h-3" />}
                       {message.fileName}
                     </Badge>
                   )}
@@ -264,6 +296,17 @@ export const ChatInterface = () => {
               onFileAttached={setAttachedFile}
               isLoading={isLoading}
             />
+            {githubConnected && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setShowGitHubBrowser(true)}
+                disabled={isLoading}
+                title="تصفح GitHub"
+              >
+                <Github className="w-4 h-4" />
+              </Button>
+            )}
             <div className="flex-1 relative">
               <Input
                 value={newMessage}
@@ -288,6 +331,12 @@ export const ChatInterface = () => {
         open={showApiModal}
         onOpenChange={setShowApiModal}
         onConfigSaved={checkConfiguration}
+      />
+
+      <GitHubBrowser
+        open={showGitHubBrowser}
+        onOpenChange={setShowGitHubBrowser}
+        onFileSelected={handleGitHubFileSelected}
       />
     </div>
   );
