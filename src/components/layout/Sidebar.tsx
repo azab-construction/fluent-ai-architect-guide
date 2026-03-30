@@ -142,6 +142,16 @@ export const Sidebar = () => {
             </Link>
           </Button>
           <Button 
+            variant={currentPath === '/whatsapp' ? 'default' : 'ghost'} 
+            className={`w-full justify-start gap-2 ${currentPath === '/whatsapp' ? 'bg-gradient-to-r from-ai-primary to-ai-accent' : ''}`}
+            asChild
+          >
+            <Link to="/whatsapp">
+              <Phone className="w-4 h-4" />
+              واتساب الأعمال
+            </Link>
+          </Button>
+          <Button 
             variant={currentPath === '/settings' ? 'default' : 'ghost'} 
             className={`w-full justify-start gap-2 ${currentPath === '/settings' ? 'bg-gradient-to-r from-ai-primary to-ai-accent' : ''}`}
             asChild
