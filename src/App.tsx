@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Integrations from "./pages/Integrations";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
+import WhatsApp from "./pages/WhatsApp";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/integrations" element={<Integrations />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/whatsapp" element={<WhatsApp />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

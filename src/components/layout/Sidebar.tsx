@@ -13,7 +13,8 @@ import {
   Plus,
   CheckCircle,
   AlertCircle,
-  Settings2
+  Settings2,
+  Phone
 } from 'lucide-react';
 import { integrationStorage } from '@/lib/integration-storage';
 
@@ -138,6 +139,16 @@ export const Sidebar = () => {
             <Link to="/analytics">
               <BarChart3 className="w-4 h-4" />
               التحليلات
+            </Link>
+          </Button>
+          <Button 
+            variant={currentPath === '/whatsapp' ? 'default' : 'ghost'} 
+            className={`w-full justify-start gap-2 ${currentPath === '/whatsapp' ? 'bg-gradient-to-r from-ai-primary to-ai-accent' : ''}`}
+            asChild
+          >
+            <Link to="/whatsapp">
+              <Phone className="w-4 h-4" />
+              واتساب الأعمال
             </Link>
           </Button>
           <Button 
