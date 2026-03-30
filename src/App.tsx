@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Integrations from "./pages/Integrations";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
+import WhatsApp from "./pages/WhatsApp";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
