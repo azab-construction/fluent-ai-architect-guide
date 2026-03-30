@@ -13,7 +13,8 @@ import {
   Plus,
   CheckCircle,
   AlertCircle,
-  Settings2
+  Settings2,
+  Phone
 } from 'lucide-react';
 import { integrationStorage } from '@/lib/integration-storage';
 
