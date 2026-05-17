@@ -17,6 +17,8 @@ import {
   Phone
 } from 'lucide-react';
 import { integrationStorage } from '@/lib/integration-storage';
+import { useAuth } from '@/hooks/useAuth';
+import { LogOut } from 'lucide-react';
 
 interface Integration {
   id: string;
@@ -30,7 +32,7 @@ export const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
-  
+  const { user, isAdmin, signOut } = useAuth();
   const [integrations, setIntegrations] = useState<Integration[]>([]);
 
   useEffect(() => {
@@ -202,10 +204,21 @@ export const Sidebar = () => {
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t">
+      <div className="p-4 border-t space-y-3">
+        {user && (
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-xs font-medium truncate">{user.email}</p>
+              <p className="text-[10px] text-muted-foreground">{isAdmin ? 'مدير' : 'مستخدم'}</p>
+            </div>
+            <Button size="sm" variant="ghost" onClick={async () => { await signOut(); navigate('/auth'); }} title="تسجيل الخروج">
+              <LogOut className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
         <div className="text-xs text-muted-foreground text-center">
-          <p>منصة الدردشة الذكية v1.0</p>
-          <p className="mt-1">مدعوم بـ OpenAI و DeepSeek</p>
+          <p>Alazab AI Console v1.0</p>
+          <p className="mt-1">Azure OpenAI عبر APIM</p>
         </div>
       </div>
     </div>
