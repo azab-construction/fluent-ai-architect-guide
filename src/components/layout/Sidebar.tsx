@@ -17,6 +17,8 @@ import {
   Phone
 } from 'lucide-react';
 import { integrationStorage } from '@/lib/integration-storage';
+import { useAuth } from '@/hooks/useAuth';
+import { LogOut } from 'lucide-react';
 
 interface Integration {
   id: string;
