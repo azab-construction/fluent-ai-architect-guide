@@ -32,7 +32,7 @@ export const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
-  
+  const { user, isAdmin, signOut } = useAuth();
   const [integrations, setIntegrations] = useState<Integration[]>([]);
 
   useEffect(() => {
