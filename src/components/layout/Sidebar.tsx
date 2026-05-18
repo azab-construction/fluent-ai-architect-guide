@@ -14,7 +14,8 @@ import {
   CheckCircle,
   AlertCircle,
   Settings2,
-  Phone
+  Phone,
+  Cloud
 } from 'lucide-react';
 import { integrationStorage } from '@/lib/integration-storage';
 import { useAuth } from '@/hooks/useAuth';
@@ -151,6 +152,16 @@ export const Sidebar = () => {
             <Link to="/whatsapp">
               <Phone className="w-4 h-4" />
               واتساب الأعمال
+            </Link>
+          </Button>
+          <Button 
+            variant={currentPath === '/azure' ? 'default' : 'ghost'} 
+            className={`w-full justify-start gap-2 ${currentPath === '/azure' ? 'bg-gradient-to-r from-ai-primary to-ai-accent' : ''}`}
+            asChild
+          >
+            <Link to="/azure">
+              <Cloud className="w-4 h-4" />
+              أدوات Azure
             </Link>
           </Button>
           <Button 

@@ -4,6 +4,15 @@ import { Paperclip, X, FileText, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ParsedFile, isFileSupported, parseFile } from '@/lib/file-parser';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+
+const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'tiff'];
+const fileToBase64 = (f: File) => new Promise<string>((res, rej) => {
+  const r = new FileReader();
+  r.onload = () => res(r.result as string);
+  r.onerror = rej;
+  r.readAsDataURL(f);
+});
 
 interface FileUploadButtonProps {
   attachedFile: ParsedFile | null;
@@ -24,10 +33,13 @@ export const FileUploadButton: React.FC<FileUploadButtonProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!isFileSupported(file)) {
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    const isImage = IMAGE_EXTS.includes(ext) || file.type.startsWith('image/');
+
+    if (!isImage && !isFileSupported(file)) {
       toast({
         title: 'نوع ملف غير مدعوم',
-        description: 'الأنواع المدعومة: PDF, TXT, DOCX',
+        description: 'الأنواع المدعومة: PDF, TXT, DOCX, صور (OCR)',
         variant: 'destructive',
       });
       return;
@@ -35,7 +47,18 @@ export const FileUploadButton: React.FC<FileUploadButtonProps> = ({
 
     setParsing(true);
     try {
-      const parsed = await parseFile(file);
+      let parsed: ParsedFile;
+      if (isImage) {
+        const base64 = await fileToBase64(file);
+        const { data, error } = await supabase.functions.invoke('azure-vision', {
+          body: { imageBase64: base64, features: 'read,caption' },
+        });
+        if (error) throw error;
+        const text = (data?.caption ? `[وصف: ${data.caption}]\n\n` : '') + (data?.text || '');
+        parsed = { name: file.name, type: ext, content: text || 'لم يتم استخراج نص.', size: file.size };
+      } else {
+        parsed = await parseFile(file);
+      }
       onFileAttached(parsed);
       toast({
         title: 'تم تحميل الملف',
@@ -58,7 +81,7 @@ export const FileUploadButton: React.FC<FileUploadButtonProps> = ({
       <input
         ref={fileInputRef}
         type="file"
-        accept=".pdf,.txt,.docx"
+        accept=".pdf,.txt,.docx,.png,.jpg,.jpeg,.gif,.bmp,.webp,.tiff,image/*"
         className="hidden"
         onChange={handleFileSelect}
         disabled={isLoading || parsing}
@@ -83,7 +106,7 @@ export const FileUploadButton: React.FC<FileUploadButtonProps> = ({
           className="h-8 w-8"
           onClick={() => fileInputRef.current?.click()}
           disabled={isLoading || parsing}
-          title="إرفاق ملف (PDF, TXT, DOCX)"
+          title="إرفاق ملف (PDF, TXT, DOCX, صور)"
         >
           {parsing ? (
             <Loader2 className="w-4 h-4 animate-spin" />
