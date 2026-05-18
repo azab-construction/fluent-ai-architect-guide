@@ -8,6 +8,7 @@ import Integrations from "./pages/Integrations";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import WhatsApp from "./pages/WhatsApp";
+import Azure from "./pages/Azure";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/whatsapp" element={<ProtectedRoute><WhatsApp /></ProtectedRoute>} />
+          <Route path="/azure" element={<ProtectedRoute><Azure /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
