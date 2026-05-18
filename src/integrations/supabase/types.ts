@@ -22,9 +22,12 @@ export type Database = {
           id: string
           latency_ms: number | null
           model: string
+          operation: string | null
           prompt_tokens: number | null
           status: string
+          summary: string | null
           total_tokens: number | null
+          updated_at: string
           user_id: string | null
         }
         Insert: {
@@ -34,9 +37,12 @@ export type Database = {
           id?: string
           latency_ms?: number | null
           model: string
+          operation?: string | null
           prompt_tokens?: number | null
           status?: string
+          summary?: string | null
           total_tokens?: number | null
+          updated_at?: string
           user_id?: string | null
         }
         Update: {
@@ -46,9 +52,12 @@ export type Database = {
           id?: string
           latency_ms?: number | null
           model?: string
+          operation?: string | null
           prompt_tokens?: number | null
           status?: string
+          summary?: string | null
           total_tokens?: number | null
+          updated_at?: string
           user_id?: string | null
         }
         Relationships: []
