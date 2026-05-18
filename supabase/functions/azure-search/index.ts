@@ -1,5 +1,6 @@
 // Azure Cognitive Search via APIM
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { startLog, markRunning, finishLog } from '../_shared/usage-log.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,6 +13,10 @@ const API_VER = '2024-07-01';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+
+  let logId: string | null = null;
+  let startedAt = Date.now();
+
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) return json({ error: 'Unauthorized' }, 401);
@@ -22,6 +27,7 @@ Deno.serve(async (req) => {
     );
     const { data: claims, error } = await supabase.auth.getClaims(authHeader.replace('Bearer ', ''));
     if (error || !claims?.claims) return json({ error: 'Unauthorized' }, 401);
+    const userId = claims.claims.sub as string;
 
     const apimKey = Deno.env.get('ALAZAB_AI_PROD_KEY');
     if (!apimKey) return json({ error: 'ALAZAB_AI_PROD_KEY not configured' }, 500);
@@ -34,6 +40,10 @@ Deno.serve(async (req) => {
       select?: string;
     };
     if (!body.index || !body.query) return json({ error: 'index and query required' }, 400);
+
+    const started = await startLog({ userId, operation: 'search', model: `azab-cognitivesearch:${body.index}` });
+    logId = started.id; startedAt = started.startedAt;
+    await markRunning(logId);
 
     const url = `${APIM_BASE}/azab-cognitivesearch/indexes/${encodeURIComponent(body.index)}/docs/search?api-version=${API_VER}`;
     const payload: Record<string, unknown> = {
@@ -51,14 +61,22 @@ Deno.serve(async (req) => {
     });
     const text = await res.text();
     let data: any; try { data = JSON.parse(text); } catch { data = { raw: text }; }
-    if (!res.ok) return json({ error: data?.error?.message || `HTTP ${res.status}`, details: data }, res.status);
+    if (!res.ok) {
+      const msg = data?.error?.message || `HTTP ${res.status}`;
+      await finishLog(logId, { startedAt, status: 'failed', errorMessage: msg });
+      return json({ error: msg, details: data }, res.status);
+    }
 
-    return json({
-      count: data['@odata.count'] ?? data.value?.length,
-      results: data.value || [],
-    });
+    const count = data['@odata.count'] ?? data.value?.length ?? 0;
+    const q = body.query.length > 60 ? body.query.slice(0, 60) + '…' : body.query;
+    const summary = `index: ${body.index} | q: "${q}" | hits: ${count}`;
+    await finishLog(logId, { startedAt, status: 'succeeded', summary });
+
+    return json({ count, results: data.value || [] });
   } catch (e) {
-    return json({ error: e instanceof Error ? e.message : 'unknown' }, 500);
+    const msg = e instanceof Error ? e.message : 'unknown';
+    await finishLog(logId, { startedAt, status: 'failed', errorMessage: msg });
+    return json({ error: msg }, 500);
   }
 });
 

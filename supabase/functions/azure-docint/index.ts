@@ -1,5 +1,6 @@
 // Azure Document Intelligence via APIM — prebuilt-read / prebuilt-layout
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { startLog, markRunning, finishLog } from '../_shared/usage-log.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,6 +13,10 @@ const API_VER = '2024-11-30';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+
+  let logId: string | null = null;
+  let startedAt = Date.now();
+
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) return json({ error: 'Unauthorized' }, 401);
@@ -22,6 +27,7 @@ Deno.serve(async (req) => {
     );
     const { data: claims, error } = await supabase.auth.getClaims(authHeader.replace('Bearer ', ''));
     if (error || !claims?.claims) return json({ error: 'Unauthorized' }, 401);
+    const userId = claims.claims.sub as string;
 
     const apimKey = Deno.env.get('ALAZAB_AI_PROD_KEY');
     if (!apimKey) return json({ error: 'ALAZAB_AI_PROD_KEY not configured' }, 500);
@@ -34,6 +40,9 @@ Deno.serve(async (req) => {
     if (!body.fileUrl && !body.fileBase64) return json({ error: 'fileUrl or fileBase64 required' }, 400);
 
     const model = body.model || 'prebuilt-read';
+    const started = await startLog({ userId, operation: 'docint', model: `azab-docint:${model}` });
+    logId = started.id; startedAt = started.startedAt;
+
     const analyzeUrl = `${APIM_BASE}/azab-docint/documentintelligence/documentModels/${model}:analyze?api-version=${API_VER}`;
 
     let submit: Response;
@@ -54,12 +63,18 @@ Deno.serve(async (req) => {
 
     if (submit.status !== 202) {
       const t = await submit.text();
-      return json({ error: `Submit failed: HTTP ${submit.status}`, details: t }, 502);
+      const msg = `Submit failed: HTTP ${submit.status}`;
+      await finishLog(logId, { startedAt, status: 'failed', errorMessage: msg });
+      return json({ error: msg, details: t }, 502);
     }
     const opLocation = submit.headers.get('operation-location');
-    if (!opLocation) return json({ error: 'Missing operation-location' }, 502);
+    if (!opLocation) {
+      await finishLog(logId, { startedAt, status: 'failed', errorMessage: 'Missing operation-location' });
+      return json({ error: 'Missing operation-location' }, 502);
+    }
 
-    // Poll
+    await markRunning(logId);
+
     const deadline = Date.now() + 50_000;
     while (Date.now() < deadline) {
       await new Promise(r => setTimeout(r, 1500));
@@ -68,13 +83,21 @@ Deno.serve(async (req) => {
       if (data.status === 'succeeded') {
         const content = data?.analyzeResult?.content || '';
         const pages = data?.analyzeResult?.pages?.length || 0;
+        const summary = `model: ${model} | pages: ${pages} | chars: ${content.length}`;
+        await finishLog(logId, { startedAt, status: 'succeeded', summary });
         return json({ content, pages, raw: data.analyzeResult });
       }
-      if (data.status === 'failed') return json({ error: 'Analysis failed', details: data }, 500);
+      if (data.status === 'failed') {
+        await finishLog(logId, { startedAt, status: 'failed', errorMessage: 'Analysis failed' });
+        return json({ error: 'Analysis failed', details: data }, 500);
+      }
     }
+    await finishLog(logId, { startedAt, status: 'failed', errorMessage: 'Timeout' });
     return json({ error: 'Timeout waiting for analysis' }, 504);
   } catch (e) {
-    return json({ error: e instanceof Error ? e.message : 'unknown' }, 500);
+    const msg = e instanceof Error ? e.message : 'unknown';
+    await finishLog(logId, { startedAt, status: 'failed', errorMessage: msg });
+    return json({ error: msg }, 500);
   }
 });
 

@@ -1,5 +1,6 @@
 // Azure AI Vision via APIM — OCR (Read) + image analysis
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { startLog, markRunning, finishLog } from '../_shared/usage-log.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,6 +12,10 @@ const APIM_BASE = 'https://azabai.azure-api.net';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+
+  let logId: string | null = null;
+  let startedAt = Date.now();
+
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) return json({ error: 'Unauthorized' }, 401);
@@ -21,6 +26,7 @@ Deno.serve(async (req) => {
     );
     const { data: claims, error } = await supabase.auth.getClaims(authHeader.replace('Bearer ', ''));
     if (error || !claims?.claims) return json({ error: 'Unauthorized' }, 401);
+    const userId = claims.claims.sub as string;
 
     const apimKey = Deno.env.get('ALAZAB_AI_PROD_KEY');
     if (!apimKey) return json({ error: 'ALAZAB_AI_PROD_KEY not configured' }, 500);
@@ -28,11 +34,15 @@ Deno.serve(async (req) => {
     const body = await req.json() as {
       imageUrl?: string;
       imageBase64?: string;
-      features?: string; // e.g. "read", "caption,read,tags"
+      features?: string;
     };
     if (!body.imageUrl && !body.imageBase64) return json({ error: 'imageUrl or imageBase64 required' }, 400);
 
     const features = body.features || 'read';
+    const started = await startLog({ userId, operation: 'vision', model: `azab-vision:${features}` });
+    logId = started.id; startedAt = started.startedAt;
+    await markRunning(logId);
+
     const url = `${APIM_BASE}/azab-vision/computervision/imageanalysis:analyze?api-version=2024-02-01&features=${encodeURIComponent(features)}`;
 
     let upstream: Response;
@@ -53,22 +63,33 @@ Deno.serve(async (req) => {
 
     const text = await upstream.text();
     let data: any; try { data = JSON.parse(text); } catch { data = { raw: text }; }
-    if (!upstream.ok) return json({ error: data?.error?.message || `HTTP ${upstream.status}`, details: data }, upstream.status);
+    if (!upstream.ok) {
+      const msg = data?.error?.message || `HTTP ${upstream.status}`;
+      await finishLog(logId, { startedAt, status: 'failed', errorMessage: msg });
+      return json({ error: msg, details: data }, upstream.status);
+    }
 
-    // Extract plain text from read result
     const readBlocks = data?.readResult?.blocks || [];
     const extractedText = readBlocks
       .flatMap((b: any) => b.lines?.map((l: any) => l.text) || [])
       .join('\n');
+    const caption = data?.captionResult?.text;
+    const tags = data?.tagsResult?.values?.map((t: any) => t.name);
 
-    return json({
-      text: extractedText,
-      caption: data?.captionResult?.text,
-      tags: data?.tagsResult?.values?.map((t: any) => t.name),
-      raw: data,
-    });
+    const summary = [
+      caption ? `caption: ${caption}` : null,
+      `chars: ${extractedText.length}`,
+      `lines: ${readBlocks.reduce((n: number, b: any) => n + (b.lines?.length || 0), 0)}`,
+      tags?.length ? `tags: ${tags.slice(0, 5).join(', ')}` : null,
+    ].filter(Boolean).join(' | ');
+
+    await finishLog(logId, { startedAt, status: 'succeeded', summary });
+
+    return json({ text: extractedText, caption, tags, raw: data });
   } catch (e) {
-    return json({ error: e instanceof Error ? e.message : 'unknown' }, 500);
+    const msg = e instanceof Error ? e.message : 'unknown';
+    await finishLog(logId, { startedAt, status: 'failed', errorMessage: msg });
+    return json({ error: msg }, 500);
   }
 });
 
