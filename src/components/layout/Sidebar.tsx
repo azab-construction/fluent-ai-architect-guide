@@ -4,18 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
-  MessageSquare, 
-  Github, 
-  HardDrive, 
-  Settings, 
-  Users, 
-  BarChart3,
-  Plus,
-  CheckCircle,
-  AlertCircle,
-  Settings2,
-  Phone,
-  Cloud
+  MessageSquare, Github, HardDrive, Settings, Users, BarChart3,
+  Plus, CheckCircle, AlertCircle, Settings2, Phone, Cloud,
+  Eye, FileSearch, Wand2, Search as SearchIcon, Bot, Hammer
 } from 'lucide-react';
 import { integrationStorage } from '@/lib/integration-storage';
 import { useAuth } from '@/hooks/useAuth';
@@ -164,6 +155,19 @@ export const Sidebar = () => {
               أدوات Azure
             </Link>
           </Button>
+          {[
+            { to: '/services/vision', icon: <Eye className="w-4 h-4" />, label: 'Vision / OCR / Speech' },
+            { to: '/services/docint', icon: <FileSearch className="w-4 h-4" />, label: 'Document Intelligence' },
+            { to: '/services/ai-processing', icon: <Wand2 className="w-4 h-4" />, label: 'AI Processing' },
+            { to: '/services/search', icon: <SearchIcon className="w-4 h-4" />, label: 'بحث الصيانة' },
+            { to: '/services/agent', icon: <Bot className="w-4 h-4" />, label: 'مساعد RAG' },
+            { to: '/services/arch-erp', icon: <Hammer className="w-4 h-4" />, label: 'Arch ERP' },
+          ].map(it => (
+            <Button key={it.to} variant={currentPath === it.to ? 'default' : 'ghost'}
+              className={`w-full justify-start gap-2 ${currentPath === it.to ? 'bg-gradient-to-r from-ai-primary to-ai-accent' : ''}`} asChild>
+              <Link to={it.to}>{it.icon}{it.label}</Link>
+            </Button>
+          ))}
           <Button 
             variant={currentPath === '/settings' ? 'default' : 'ghost'} 
             className={`w-full justify-start gap-2 ${currentPath === '/settings' ? 'bg-gradient-to-r from-ai-primary to-ai-accent' : ''}`}

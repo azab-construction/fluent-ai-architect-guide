@@ -11,6 +11,12 @@ import WhatsApp from "./pages/WhatsApp";
 import Azure from "./pages/Azure";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import VisionOCR from "./pages/services/VisionOCR";
+import DocumentIntelligence from "./pages/services/DocumentIntelligence";
+import AIProcessing from "./pages/services/AIProcessing";
+import MaintenanceSearch from "./pages/services/MaintenanceSearch";
+import QAAgent from "./pages/services/QAAgent";
+import ArchERP from "./pages/services/ArchERP";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -29,6 +35,12 @@ const App = () => (
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/whatsapp" element={<ProtectedRoute><WhatsApp /></ProtectedRoute>} />
           <Route path="/azure" element={<ProtectedRoute><Azure /></ProtectedRoute>} />
+          <Route path="/services/vision" element={<ProtectedRoute><VisionOCR /></ProtectedRoute>} />
+          <Route path="/services/docint" element={<ProtectedRoute><DocumentIntelligence /></ProtectedRoute>} />
+          <Route path="/services/ai-processing" element={<ProtectedRoute><AIProcessing /></ProtectedRoute>} />
+          <Route path="/services/search" element={<ProtectedRoute><MaintenanceSearch /></ProtectedRoute>} />
+          <Route path="/services/agent" element={<ProtectedRoute><QAAgent /></ProtectedRoute>} />
+          <Route path="/services/arch-erp" element={<ProtectedRoute><ArchERP /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
