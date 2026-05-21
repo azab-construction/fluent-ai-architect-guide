@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { LiveOperationStatus } from '@/components/azure/LiveOperationStatus';
 
 const MaintenanceSearch = () => {
   const { toast } = useToast();

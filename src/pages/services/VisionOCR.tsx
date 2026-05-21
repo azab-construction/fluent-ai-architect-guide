@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
+import { LiveOperationStatus } from '@/components/azure/LiveOperationStatus';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -86,6 +87,9 @@ const VisionOCR = () => {
             <h1 className="text-2xl font-bold">Vision / OCR / Speech</h1>
             <p className="text-sm text-muted-foreground">تحليل صور الأعطال، استخراج نصوص PDF، تفريغ ملفات صوتية من واتساب</p>
           </div>
+
+          <LiveOperationStatus operation="vision" />
+
 
           <Tabs defaultValue="image">
             <TabsList>
