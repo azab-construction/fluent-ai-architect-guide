@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   MessageSquare, Github, HardDrive, Settings, Users, BarChart3,
   Plus, CheckCircle, AlertCircle, Settings2, Phone, Cloud,
-  Eye, FileSearch, Wand2, Search as SearchIcon, Bot, Hammer
+  Eye, FileSearch, Wand2, Search as SearchIcon, Bot, Hammer, Box
 } from 'lucide-react';
 import { integrationStorage } from '@/lib/integration-storage';
 import { useAuth } from '@/hooks/useAuth';
@@ -162,6 +162,7 @@ export const Sidebar = () => {
             { to: '/services/search', icon: <SearchIcon className="w-4 h-4" />, label: 'بحث الصيانة' },
             { to: '/services/agent', icon: <Bot className="w-4 h-4" />, label: 'مساعد RAG' },
             { to: '/services/arch-erp', icon: <Hammer className="w-4 h-4" />, label: 'Arch ERP' },
+            { to: '/engineering', icon: <Box className="w-4 h-4" />, label: 'الأدوات الهندسية (3D/DXF/عروض)' },
           ].map(it => (
             <Button key={it.to} variant={currentPath === it.to ? 'default' : 'ghost'}
               className={`w-full justify-start gap-2 ${currentPath === it.to ? 'bg-gradient-to-r from-ai-primary to-ai-accent' : ''}`} asChild>
