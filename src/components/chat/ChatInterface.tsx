@@ -229,6 +229,25 @@ export const ChatInterface = () => {
             {isConfigured ? 'تعديل الإعدادات' : 'إعداد API'}
           </Button>
         </div>
+
+        {/* Quick tool shortcuts */}
+        <div className="flex flex-wrap gap-2 mt-3">
+          {[
+            { cmd: '/ocr', label: '📷 OCR' },
+            { cmd: '/docint', label: '📄 مقايسات' },
+            { cmd: '/search', label: '🔎 بحث صيانة' },
+            { cmd: '/3d', label: '🧊 عارض 3D' },
+            { cmd: '/dxf', label: '📐 DXF' },
+            { cmd: '/calc', label: '🧮 حاسبة' },
+            { cmd: '/quote', label: '💰 عرض سعر' },
+            { cmd: '/agent', label: '🤖 RAG' },
+          ].map(s => (
+            <Button key={s.cmd} size="sm" variant="outline" className="h-7 text-xs"
+              onClick={() => { setNewMessage(s.cmd); setTimeout(() => handleSendMessage(), 50); }}>
+              {s.label}
+            </Button>
+          ))}
+        </div>
         
         {!isConfigured && (
           <Alert className="mt-4">
