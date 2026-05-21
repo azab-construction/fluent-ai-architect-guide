@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
+import { LiveOperationStatus } from '@/components/azure/LiveOperationStatus';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -95,6 +96,9 @@ const DocumentIntelligence = () => {
             <h1 className="text-2xl font-bold">Document Intelligence</h1>
             <p className="text-sm text-muted-foreground">استخراج بنود الفواتير والمقايسات من PDF</p>
           </div>
+
+          <LiveOperationStatus operation="docint" />
+
 
           <Card className="p-4 space-y-4">
             <div className="grid gap-3 md:grid-cols-3">

@@ -17,6 +17,7 @@ import AIProcessing from "./pages/services/AIProcessing";
 import MaintenanceSearch from "./pages/services/MaintenanceSearch";
 import QAAgent from "./pages/services/QAAgent";
 import ArchERP from "./pages/services/ArchERP";
+import EngineeringTools from "./pages/EngineeringTools";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
           <Route path="/services/search" element={<ProtectedRoute><MaintenanceSearch /></ProtectedRoute>} />
           <Route path="/services/agent" element={<ProtectedRoute><QAAgent /></ProtectedRoute>} />
           <Route path="/services/arch-erp" element={<ProtectedRoute><ArchERP /></ProtectedRoute>} />
+          <Route path="/engineering" element={<ProtectedRoute><EngineeringTools /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
