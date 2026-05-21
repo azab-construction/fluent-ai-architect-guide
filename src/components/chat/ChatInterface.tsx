@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -38,6 +39,7 @@ function getUserPreferences() {
 }
 
 export const ChatInterface = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -90,7 +92,29 @@ export const ChatInterface = () => {
   };
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() && !attachedFile) return;
+    const trimmed = newMessage.trim();
+
+    // Slash-command shortcuts: route to dedicated tools
+    if (trimmed.startsWith('/')) {
+      const cmd = trimmed.split(/\s+/)[0].toLowerCase();
+      const map: Record<string, string> = {
+        '/ocr': '/services/vision',
+        '/docint': '/services/docint',
+        '/search': '/services/search',
+        '/calc': '/services/arch-erp',
+        '/quote': '/engineering',
+        '/3d': '/engineering',
+        '/dxf': '/engineering',
+        '/agent': '/services/agent',
+      };
+      if (map[cmd]) {
+        setNewMessage('');
+        navigate(map[cmd]);
+        return;
+      }
+    }
+
+    if (!trimmed && !attachedFile) return;
 
     if (!isConfigured || !aiService) {
       setShowApiModal(true);
