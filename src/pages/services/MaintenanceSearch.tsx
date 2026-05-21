@@ -43,6 +43,10 @@ const MaintenanceSearch = () => {
             <p className="text-sm text-muted-foreground">بحث داخل 4,700+ طلب صيانة وملفات المشاريع عبر Azure Cognitive Search</p>
           </div>
 
+          <LiveOperationStatus operation="search" />
+
+
+
           <Card className="p-4 space-y-3">
             <div className="grid gap-3 md:grid-cols-2">
               <div>
