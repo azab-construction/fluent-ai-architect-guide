@@ -270,6 +270,7 @@ export const ChatInterface = () => {
             { cmd: '/search', label: '🔎 بحث صيانة' }, { cmd: '/3d', label: '🧊 عارض 3D' },
             { cmd: '/dxf', label: '📐 DXF' }, { cmd: '/calc', label: '🧮 حاسبة' },
             { cmd: '/quote', label: '💰 عرض سعر' }, { cmd: '/agent', label: '🤖 RAG' },
+            { cmd: '/design دولاب 3 أبواب', label: '🪵 صمم وحدة + VR' },
           ].map(s => (
             <Button key={s.cmd} size="sm" variant="outline" className="h-7 text-xs"
               onClick={() => { setNewMessage(s.cmd); setTimeout(() => handleSendMessage(), 50); }}>
