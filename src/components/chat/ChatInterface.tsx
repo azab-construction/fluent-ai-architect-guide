@@ -358,6 +358,16 @@ export const ChatInterface = () => {
       </div>
       </div>
 
+      {showDesigner && woodSpec && (
+        <div className="w-[420px] border-l hidden lg:block">
+          <WoodUnitDesigner
+            spec={woodSpec}
+            onSpecChange={setWoodSpec}
+            onClose={() => setShowDesigner(false)}
+          />
+        </div>
+      )}
+
       <ChatSessionsSidebar
         currentSessionId={sessionId}
         onSelectSession={setSessionId}
