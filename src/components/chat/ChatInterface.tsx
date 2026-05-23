@@ -12,12 +12,16 @@ import { ApiKeyModal } from '@/components/chat/ApiKeyModal';
 import { FileUploadButton } from '@/components/chat/FileUploadButton';
 import { GitHubBrowser } from '@/components/chat/GitHubBrowser';
 import { ChatSessionsSidebar } from '@/components/chat/ChatSessionsSidebar';
+import { WoodUnitDesigner } from '@/components/chat/WoodUnitDesigner';
 import { useToast } from '@/hooks/use-toast';
 import { analyticsStorage } from '@/lib/integration-storage';
 import { githubAPI } from '@/lib/github-api';
 import { ParsedFile } from '@/lib/file-parser';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { parseWoodRequest, specToArabicSummary, WoodUnitSpec } from '@/lib/wood-unit-parser';
+
+const WOOD_INTENT_RE = /(صمم|تصميم|اعمل|ابغى|اريد|design|build|make)\s*(لي|me)?\s*(دولاب|خزانة|خزانه|كبتة|كبت|رف|أرفف|مكتبة|طاولة|ترابيزة|مكتب|سرير|باب|wardrobe|cabinet|shelf|table|desk|bed|door|closet)/i;
 
 interface Message {
   id: string;
@@ -59,6 +63,8 @@ export const ChatInterface = () => {
   const [githubConnected, setGithubConnected] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionsRefreshKey, setSessionsRefreshKey] = useState(0);
+  const [woodSpec, setWoodSpec] = useState<WoodUnitSpec | null>(null);
+  const [showDesigner, setShowDesigner] = useState(false);
 
   useEffect(() => {
     checkConfiguration();
@@ -151,6 +157,19 @@ export const ChatInterface = () => {
         '/dxf': '/engineering', '/agent': '/services/agent',
       };
       if (map[cmd]) { setNewMessage(''); navigate(map[cmd]); return; }
+      if (cmd === '/design' || cmd === '/wood') {
+        const rest = trimmed.replace(/^\S+\s*/, '');
+        const spec = parseWoodRequest(rest || 'دولاب');
+        setWoodSpec(spec); setShowDesigner(true); setNewMessage('');
+        return;
+      }
+    }
+
+    // Auto-detect wood design intent
+    if (trimmed && WOOD_INTENT_RE.test(trimmed)) {
+      const spec = parseWoodRequest(trimmed);
+      setWoodSpec(spec);
+      setShowDesigner(true);
     }
 
     if (!trimmed && !attachedFile) return;
@@ -251,6 +270,7 @@ export const ChatInterface = () => {
             { cmd: '/search', label: '🔎 بحث صيانة' }, { cmd: '/3d', label: '🧊 عارض 3D' },
             { cmd: '/dxf', label: '📐 DXF' }, { cmd: '/calc', label: '🧮 حاسبة' },
             { cmd: '/quote', label: '💰 عرض سعر' }, { cmd: '/agent', label: '🤖 RAG' },
+            { cmd: '/design دولاب 3 أبواب', label: '🪵 صمم وحدة + VR' },
           ].map(s => (
             <Button key={s.cmd} size="sm" variant="outline" className="h-7 text-xs"
               onClick={() => { setNewMessage(s.cmd); setTimeout(() => handleSendMessage(), 50); }}>
@@ -337,6 +357,16 @@ export const ChatInterface = () => {
         </div>
       </div>
       </div>
+
+      {showDesigner && woodSpec && (
+        <div className="w-[420px] border-l hidden lg:block">
+          <WoodUnitDesigner
+            spec={woodSpec}
+            onSpecChange={setWoodSpec}
+            onClose={() => setShowDesigner(false)}
+          />
+        </div>
+      )}
 
       <ChatSessionsSidebar
         currentSessionId={sessionId}
