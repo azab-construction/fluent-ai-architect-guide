@@ -63,6 +63,8 @@ export const ChatInterface = () => {
   const [githubConnected, setGithubConnected] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionsRefreshKey, setSessionsRefreshKey] = useState(0);
+  const [woodSpec, setWoodSpec] = useState<WoodUnitSpec | null>(null);
+  const [showDesigner, setShowDesigner] = useState(false);
 
   useEffect(() => {
     checkConfiguration();
