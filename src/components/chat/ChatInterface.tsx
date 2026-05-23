@@ -12,12 +12,16 @@ import { ApiKeyModal } from '@/components/chat/ApiKeyModal';
 import { FileUploadButton } from '@/components/chat/FileUploadButton';
 import { GitHubBrowser } from '@/components/chat/GitHubBrowser';
 import { ChatSessionsSidebar } from '@/components/chat/ChatSessionsSidebar';
+import { WoodUnitDesigner } from '@/components/chat/WoodUnitDesigner';
 import { useToast } from '@/hooks/use-toast';
 import { analyticsStorage } from '@/lib/integration-storage';
 import { githubAPI } from '@/lib/github-api';
 import { ParsedFile } from '@/lib/file-parser';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { parseWoodRequest, specToArabicSummary, WoodUnitSpec } from '@/lib/wood-unit-parser';
+
+const WOOD_INTENT_RE = /(صمم|تصميم|اعمل|ابغى|اريد|design|build|make)\s*(لي|me)?\s*(دولاب|خزانة|خزانه|كبتة|كبت|رف|أرفف|مكتبة|طاولة|ترابيزة|مكتب|سرير|باب|wardrobe|cabinet|shelf|table|desk|bed|door|closet)/i;
 
 interface Message {
   id: string;
