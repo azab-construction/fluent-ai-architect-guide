@@ -157,6 +157,19 @@ export const ChatInterface = () => {
         '/dxf': '/engineering', '/agent': '/services/agent',
       };
       if (map[cmd]) { setNewMessage(''); navigate(map[cmd]); return; }
+      if (cmd === '/design' || cmd === '/wood') {
+        const rest = trimmed.replace(/^\S+\s*/, '');
+        const spec = parseWoodRequest(rest || 'دولاب');
+        setWoodSpec(spec); setShowDesigner(true); setNewMessage('');
+        return;
+      }
+    }
+
+    // Auto-detect wood design intent
+    if (trimmed && WOOD_INTENT_RE.test(trimmed)) {
+      const spec = parseWoodRequest(trimmed);
+      setWoodSpec(spec);
+      setShowDesigner(true);
     }
 
     if (!trimmed && !attachedFile) return;
