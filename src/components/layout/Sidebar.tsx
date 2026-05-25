@@ -115,7 +115,7 @@ export const Sidebar = () => {
     s === 'connected' ? 'bg-success' : s === 'error' ? 'bg-destructive' : 'bg-muted-foreground/40';
 
   return (
-    <aside className="w-72 h-screen bg-card border-l flex flex-col">
+    <aside className="w-72 h-screen bg-card border-r flex flex-col">
       {/* Brand */}
       <div className="px-4 py-3 border-b flex items-center gap-2.5">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-ai-primary to-ai-accent flex items-center justify-center">
