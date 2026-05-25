@@ -4,15 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Bot, User, FileText, Github, HardDrive, Settings, AlertCircle } from 'lucide-react';
+import { Send, Bot, User, FileText, Github, HardDrive, Settings, AlertCircle, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AIService, aiConfigManager } from '@/lib/ai-providers';
 import { ApiKeyModal } from '@/components/chat/ApiKeyModal';
 import { FileUploadButton } from '@/components/chat/FileUploadButton';
 import { GitHubBrowser } from '@/components/chat/GitHubBrowser';
-import { ChatSessionsSidebar } from '@/components/chat/ChatSessionsSidebar';
 import { WoodUnitDesigner } from '@/components/chat/WoodUnitDesigner';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { analyticsStorage } from '@/lib/integration-storage';
 import { githubAPI } from '@/lib/github-api';
@@ -20,6 +20,7 @@ import { ParsedFile } from '@/lib/file-parser';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { parseWoodRequest, specToArabicSummary, WoodUnitSpec } from '@/lib/wood-unit-parser';
+import { useChatSession } from '@/lib/chat-session-store';
 
 const WOOD_INTENT_RE = /(صمم|تصميم|اعمل|ابغى|اريد|design|build|make)\s*(لي|me)?\s*(دولاب|خزانة|خزانه|كبتة|كبت|رف|أرفف|مكتبة|طاولة|ترابيزة|مكتب|سرير|باب|wardrobe|cabinet|shelf|table|desk|bed|door|closet)/i;
 
@@ -61,8 +62,7 @@ export const ChatInterface = () => {
   const [aiService, setAIService] = useState<AIService | null>(null);
   const [attachedFile, setAttachedFile] = useState<ParsedFile | null>(null);
   const [githubConnected, setGithubConnected] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [sessionsRefreshKey, setSessionsRefreshKey] = useState(0);
+  const { sessionId, setSession, bumpRefresh } = useChatSession();
   const [woodSpec, setWoodSpec] = useState<WoodUnitSpec | null>(null);
   const [showDesigner, setShowDesigner] = useState(false);
 
