@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Box, FileText, Calculator, Save, Loader2 } from 'lucide-react';
+import { Box, FileText, Calculator, Save, Loader2, FileDown } from 'lucide-react';
+import { exportQuotePdf } from '@/lib/quote-pdf';
 import { Model3DViewer } from '@/components/engineering/Model3DViewer';
 import { DXFViewer } from '@/components/engineering/DXFViewer';
 import { calcQuoteItems, totals, QuoteSpecs } from '@/lib/quote-utils';
@@ -138,6 +139,13 @@ const EngineeringTools = () => {
                 </div>
                 <Button className="mt-3 gap-2" onClick={saveQuote} disabled={saving}>
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} حفظ عرض السعر
+                </Button>
+                <Button
+                  variant="outline"
+                  className="mt-3 ms-2 gap-2"
+                  onClick={() => exportQuotePdf({ customer, specs, qty, items, subtotal: t.subtotal, tax: t.tax, total: t.total, currency: 'EGP', taxRate: 0.14 })}
+                >
+                  <FileDown className="w-4 h-4" /> تصدير PDF
                 </Button>
               </Card>
             </TabsContent>
