@@ -244,118 +244,123 @@ export const ChatInterface = () => {
     }
   };
 
+  const quickCommands = [
+    { cmd: '/ocr', label: 'OCR / صور' },
+    { cmd: '/docint', label: 'مقايسات PDF' },
+    { cmd: '/search', label: 'بحث الصيانة' },
+    { cmd: '/3d', label: 'عارض 3D' },
+    { cmd: '/dxf', label: 'DXF / AutoCAD' },
+    { cmd: '/calc', label: 'حاسبة' },
+    { cmd: '/quote', label: 'عرض سعر' },
+    { cmd: '/agent', label: 'مساعد RAG' },
+    { cmd: '/design دولاب 3 أبواب', label: 'صمم وحدة + VR' },
+  ];
+
   return (
     <div className="flex h-screen bg-background w-full">
       <div className="flex flex-col flex-1 min-w-0">
-      <div className="border-b bg-card p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-ai-primary to-ai-accent flex items-center justify-center">
-              <Bot className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold">منصة الدردشة الذكية</h1>
-              <p className="text-sm text-muted-foreground">مساعدك الذكي للملفات والأكواد</p>
-            </div>
+        {/* Slim header */}
+        <header className="border-b bg-card/50 backdrop-blur px-6 py-3 flex items-center justify-between">
+          <div className="min-w-0">
+            <h1 className="text-base font-semibold leading-tight">المساعد الذكي</h1>
+            <p className="text-xs text-muted-foreground">دردشة، تحليل ملفات، وتصميم وحدات</p>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setShowApiModal(true)} className="gap-2">
-            <Settings className="w-4 h-4" />
-            {isConfigured ? 'تعديل الإعدادات' : 'إعداد API'}
-          </Button>
-        </div>
-
-        <div className="flex flex-wrap gap-2 mt-3">
-          {[
-            { cmd: '/ocr', label: '📷 OCR' }, { cmd: '/docint', label: '📄 مقايسات' },
-            { cmd: '/search', label: '🔎 بحث صيانة' }, { cmd: '/3d', label: '🧊 عارض 3D' },
-            { cmd: '/dxf', label: '📐 DXF' }, { cmd: '/calc', label: '🧮 حاسبة' },
-            { cmd: '/quote', label: '💰 عرض سعر' }, { cmd: '/agent', label: '🤖 RAG' },
-            { cmd: '/design دولاب 3 أبواب', label: '🪵 صمم وحدة + VR' },
-          ].map(s => (
-            <Button key={s.cmd} size="sm" variant="outline" className="h-7 text-xs"
-              onClick={() => { setNewMessage(s.cmd); setTimeout(() => handleSendMessage(), 50); }}>
-              {s.label}
+          <div className="flex items-center gap-1.5">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-xs">
+                  <Sparkles className="w-3.5 h-3.5" /> أدوات سريعة
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                {quickCommands.map(s => (
+                  <DropdownMenuItem key={s.cmd}
+                    onClick={() => { setNewMessage(s.cmd); setTimeout(() => handleSendMessage(), 50); }}>
+                    {s.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowApiModal(true)} title="الإعدادات">
+              <Settings className="w-4 h-4" />
             </Button>
-          ))}
-        </div>
+          </div>
+        </header>
 
         {!isConfigured && (
-          <Alert className="mt-4">
+          <Alert className="m-4 mb-0">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>يرجى إعداد مزود الذكاء الاصطناعي للبدء في استخدام المساعد الذكي</AlertDescription>
+            <AlertDescription>يرجى إعداد مزود الذكاء الاصطناعي للبدء.</AlertDescription>
           </Alert>
         )}
-      </div>
 
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4 max-w-4xl mx-auto">
-          {messages.map((message) => (
-            <div key={message.id} className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`flex gap-3 max-w-[80%] ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-gradient-to-r from-ai-primary to-ai-accent text-white'
-                }`}>
-                  {message.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+        <ScrollArea className="flex-1">
+          <div className="px-6 py-6 space-y-5 max-w-3xl mx-auto">
+            {messages.map((message) => (
+              <div key={message.id} className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`flex gap-2.5 max-w-[85%] ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-gradient-to-br from-ai-primary to-ai-accent text-white'
+                  }`}>
+                    {message.role === 'user' ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
+                  </div>
+                  <div className={`rounded-2xl px-4 py-2.5 ${
+                    message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted/50'
+                  }`}>
+                    {message.fileName && (
+                      <Badge variant="secondary" className="text-[10px] mb-1.5 gap-1 bg-background/40">
+                        {message.fileName.includes('/') ? <Github className="w-2.5 h-2.5" /> : <FileText className="w-2.5 h-2.5" />}
+                        {message.fileName}
+                      </Badge>
+                    )}
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap" dir="auto">{message.content}</p>
+                    {message.sources && message.sources.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-current/10">
+                        {message.sources.map((source, index) => (
+                          <Badge key={index} variant="secondary" className="text-[10px] bg-background/40">
+                            {getSourceIcon(source.type)}<span className="ml-1">{source.name}</span>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <Card className={`p-4 ${message.role === 'user' ? 'bg-chat-user border-primary/20' : 'bg-chat-ai border-ai-primary/20'}`}>
-                  {message.fileName && (
-                    <Badge variant="secondary" className="text-xs mb-2 gap-1">
-                      {message.fileName.includes('/') ? <Github className="w-3 h-3" /> : <FileText className="w-3 h-3" />}
-                      {message.fileName}
-                    </Badge>
-                  )}
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap" dir="auto">{message.content}</p>
-                  {message.sources && message.sources.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t">
-                      {message.sources.map((source, index) => (
-                        <Badge key={index} variant="secondary" className="text-xs">
-                          {getSourceIcon(source.type)}<span className="ml-1">{source.name}</span>
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-2">{message.timestamp.toLocaleTimeString('ar-SA')}</p>
-                </Card>
               </div>
-            </div>
-          ))}
-          {isLoading && (
-            <div className="flex gap-3 justify-start">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-ai-primary to-ai-accent flex items-center justify-center">
-                <Bot className="w-4 h-4 text-white" />
-              </div>
-              <Card className="p-4 bg-chat-ai border-ai-primary/20">
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-ai-primary"></div>
-                  <p className="text-sm text-muted-foreground">جاري التحليل...</p>
+            ))}
+            {isLoading && (
+              <div className="flex gap-2.5 justify-start">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-ai-primary to-ai-accent flex items-center justify-center">
+                  <Bot className="w-3.5 h-3.5 text-white" />
                 </div>
-              </Card>
-            </div>
-          )}
-        </div>
-      </ScrollArea>
-
-      <div className="border-t bg-card p-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex gap-2 items-center">
-            <FileUploadButton attachedFile={attachedFile} onFileAttached={setAttachedFile} isLoading={isLoading} />
-            {githubConnected && (
-              <Button variant="outline" size="icon" onClick={() => setShowGitHubBrowser(true)} disabled={isLoading} title="تصفح GitHub">
-                <Github className="w-4 h-4" />
-              </Button>
+                <div className="rounded-2xl px-4 py-2.5 bg-muted/50 flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-ai-primary" />
+                  <p className="text-xs text-muted-foreground">جاري التحليل...</p>
+                </div>
+              </div>
             )}
-            <div className="flex-1 relative">
+          </div>
+        </ScrollArea>
+
+        <div className="border-t bg-card/50 backdrop-blur px-6 py-3">
+          <div className="max-w-3xl mx-auto">
+            <div className="flex gap-2 items-center bg-background rounded-xl border px-2 py-1.5 focus-within:ring-2 focus-within:ring-primary/20">
+              <FileUploadButton attachedFile={attachedFile} onFileAttached={setAttachedFile} isLoading={isLoading} />
+              {githubConnected && (
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowGitHubBrowser(true)} disabled={isLoading} title="تصفح GitHub">
+                  <Github className="w-4 h-4" />
+                </Button>
+              )}
               <Input value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
-                placeholder={attachedFile ? "أضف تعليمات للتحليل أو أرسل مباشرة..." : "اكتب رسالتك هنا..."}
-                dir="auto" onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()} />
+                placeholder={attachedFile ? "أضف تعليمات للتحليل..." : "اكتب رسالتك هنا..."}
+                dir="auto" onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                className="flex-1 border-0 focus-visible:ring-0 shadow-none bg-transparent" />
+              <Button onClick={handleSendMessage} disabled={(!newMessage.trim() && !attachedFile) || isLoading}
+                size="icon" className="h-8 w-8 bg-gradient-to-br from-ai-primary to-ai-accent hover:opacity-90">
+                <Send className="w-3.5 h-3.5" />
+              </Button>
             </div>
-            <Button onClick={handleSendMessage} disabled={(!newMessage.trim() && !attachedFile) || isLoading}
-              className="bg-gradient-to-r from-ai-primary to-ai-accent hover:opacity-90">
-              <Send className="w-4 h-4" />
-            </Button>
           </div>
         </div>
-      </div>
       </div>
 
       {showDesigner && woodSpec && (
@@ -367,12 +372,6 @@ export const ChatInterface = () => {
           />
         </div>
       )}
-
-      <ChatSessionsSidebar
-        currentSessionId={sessionId}
-        onSelectSession={setSessionId}
-        refreshKey={sessionsRefreshKey}
-      />
 
       <ApiKeyModal open={showApiModal} onOpenChange={setShowApiModal} onConfigSaved={checkConfiguration} />
       <GitHubBrowser open={showGitHubBrowser} onOpenChange={setShowGitHubBrowser} onFileSelected={handleGitHubFileSelected} />
