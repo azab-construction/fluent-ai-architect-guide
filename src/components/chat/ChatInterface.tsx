@@ -130,8 +130,8 @@ export const ChatInterface = () => {
       toast({ title: 'تعذّر إنشاء الجلسة', description: error?.message, variant: 'destructive' });
       return null;
     }
-    setSessionId(data.id);
-    setSessionsRefreshKey(k => k + 1);
+    setSession(data.id);
+    bumpRefresh();
     return data.id;
   };
 
