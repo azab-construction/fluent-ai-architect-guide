@@ -51,8 +51,10 @@ export const Sidebar = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [integrationsStatus, setIntegrationsStatus] = useState<Record<string, string>>({});
+  const [sessionSearch, setSessionSearch] = useState('');
 
   const isChat = pathname === '/';
+
 
   const loadSessions = async () => {
     if (!user) return;
@@ -96,6 +98,10 @@ export const Sidebar = () => {
     loadSessions();
   };
 
+  const filteredSessions = sessions.filter(s =>
+    s.title.toLowerCase().includes(sessionSearch.trim().toLowerCase())
+  );
+
   const NavLink = ({ to, icon: Icon, label }: { to: string; icon: any; label: string }) => {
     const active = pathname === to;
     return (
@@ -110,6 +116,7 @@ export const Sidebar = () => {
       </Link>
     );
   };
+
 
   const statusDot = (s?: string) =>
     s === 'connected' ? 'bg-success' : s === 'error' ? 'bg-destructive' : 'bg-muted-foreground/40';
@@ -147,11 +154,24 @@ export const Sidebar = () => {
                 <Plus className="w-3.5 h-3.5" />
               </Button>
             </div>
+            <div className="px-2 pb-1.5">
+              <div className="relative">
+                <SearchIcon className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+                <Input
+                  value={sessionSearch}
+                  onChange={e => setSessionSearch(e.target.value)}
+                  placeholder="ابحث في المحادثات..."
+                  className="h-7 text-xs pr-7 bg-background"
+                />
+              </div>
+            </div>
             <div className="space-y-0.5">
-              {sessions.length === 0 && (
-                <p className="text-[11px] text-muted-foreground text-center py-2">لا توجد محادثات</p>
+              {filteredSessions.length === 0 && (
+                <p className="text-[11px] text-muted-foreground text-center py-2">
+                  {sessionSearch ? 'لا توجد نتائج' : 'لا توجد محادثات'}
+                </p>
               )}
-              {sessions.map(s => (
+              {filteredSessions.map(s => (
                 <div
                   key={s.id}
                   className={`group flex items-center gap-1 px-2 py-1.5 rounded-md text-xs cursor-pointer ${
@@ -196,6 +216,7 @@ export const Sidebar = () => {
             </div>
           </div>
         )}
+
 
         <Accordion type="multiple" defaultValue={['services']} className="px-2">
           <AccordionItem value="services" className="border-0">
