@@ -98,6 +98,10 @@ export const Sidebar = () => {
     loadSessions();
   };
 
+  const filteredSessions = sessions.filter(s =>
+    s.title.toLowerCase().includes(sessionSearch.trim().toLowerCase())
+  );
+
   const NavLink = ({ to, icon: Icon, label }: { to: string; icon: any; label: string }) => {
     const active = pathname === to;
     return (
@@ -112,6 +116,7 @@ export const Sidebar = () => {
       </Link>
     );
   };
+
 
   const statusDot = (s?: string) =>
     s === 'connected' ? 'bg-success' : s === 'error' ? 'bg-destructive' : 'bg-muted-foreground/40';
