@@ -51,8 +51,10 @@ export const Sidebar = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [integrationsStatus, setIntegrationsStatus] = useState<Record<string, string>>({});
+  const [sessionSearch, setSessionSearch] = useState('');
 
   const isChat = pathname === '/';
+
 
   const loadSessions = async () => {
     if (!user) return;
