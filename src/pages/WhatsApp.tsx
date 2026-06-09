@@ -32,6 +32,51 @@ interface WhatsAppMessage {
   processed_at: string | null;
 }
 
+// Renders a WhatsApp media attachment by resolving a short-lived signed URL
+// when the stored value is a storage path (private bucket). Falls back to using
+// the value directly if it's a full URL (legacy rows).
+function MediaAttachment({ path, filename, mime }: { path: string; filename: string | null; mime: string | null }) {
+  const [url, setUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function resolve() {
+      if (/^https?:\/\//i.test(path)) {
+        if (!cancelled) setUrl(path);
+        return;
+      }
+      const { data, error } = await supabase.storage
+        .from('whatsapp-media')
+        .createSignedUrl(path, 3600);
+      if (!cancelled) setUrl(error ? null : (data?.signedUrl ?? null));
+    }
+    resolve();
+    return () => { cancelled = true; };
+  }, [path]);
+
+  return (
+    <div>
+      <h4 className="font-medium text-sm mb-1">الملف المرفق:</h4>
+      <div className="flex items-center gap-2">
+        <span className="text-sm truncate flex-1">{filename}</span>
+        {url ? (
+          <a href={url} target="_blank" rel="noreferrer">
+            <Button size="sm" variant="outline" className="gap-1">
+              <Download className="w-3 h-3" />
+              تحميل
+            </Button>
+          </a>
+        ) : (
+          <Button size="sm" variant="outline" disabled>...</Button>
+        )}
+      </div>
+      {mime?.startsWith('image') && url && (
+        <img src={url} alt="Media" className="mt-2 rounded max-h-48 object-cover w-full" />
+      )}
+    </div>
+  );
+}
+
 const typeIcons: Record<string, React.ReactNode> = {
   text: <MessageSquare className="w-4 h-4" />,
   image: <Image className="w-4 h-4" />,
@@ -329,27 +374,11 @@ export default function WhatsApp() {
                   )}
 
                   {selectedMessage.media_url && (
-                    <div>
-                      <h4 className="font-medium text-sm mb-1">الملف المرفق:</h4>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm truncate flex-1">
-                          {selectedMessage.media_filename}
-                        </span>
-                        <a href={selectedMessage.media_url} target="_blank" rel="noreferrer">
-                          <Button size="sm" variant="outline" className="gap-1">
-                            <Download className="w-3 h-3" />
-                            تحميل
-                          </Button>
-                        </a>
-                      </div>
-                      {selectedMessage.media_mime_type?.startsWith('image') && (
-                        <img
-                          src={selectedMessage.media_url}
-                          alt="Media"
-                          className="mt-2 rounded max-h-48 object-cover w-full"
-                        />
-                      )}
-                    </div>
+                    <MediaAttachment
+                      path={selectedMessage.media_url}
+                      filename={selectedMessage.media_filename}
+                      mime={selectedMessage.media_mime_type}
+                    />
                   )}
 
                   {selectedMessage.ai_analysis && (

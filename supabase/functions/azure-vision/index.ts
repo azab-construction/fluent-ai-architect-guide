@@ -38,7 +38,28 @@ Deno.serve(async (req) => {
     };
     if (!body.imageUrl && !body.imageBase64) return json({ error: 'imageUrl or imageBase64 required' }, 400);
 
-    const features = body.features || 'read';
+    // Validate imageUrl: https only, block private/local hosts
+    if (body.imageUrl) {
+      try {
+        const u = new URL(body.imageUrl);
+        if (u.protocol !== 'https:') return json({ error: 'imageUrl must be https' }, 400);
+        const host = u.hostname.toLowerCase();
+        if (/^(localhost|127\.|10\.|192\.168\.|169\.254\.|::1)/.test(host) || host.endsWith('.internal') || host.endsWith('.local')) {
+          return json({ error: 'imageUrl host not allowed' }, 400);
+        }
+      } catch {
+        return json({ error: 'Invalid imageUrl' }, 400);
+      }
+    }
+
+    // Validate features: allowlist
+    const ALLOWED_FEATURES = new Set(['read', 'caption', 'denseCaptions', 'tags', 'objects', 'smartCrops', 'people']);
+    const requestedFeatures = (body.features || 'read').split(',').map(s => s.trim()).filter(Boolean);
+    if (requestedFeatures.some(f => !ALLOWED_FEATURES.has(f))) {
+      return json({ error: 'Invalid features' }, 400);
+    }
+    const features = requestedFeatures.join(',');
+
     const started = await startLog({ userId, operation: 'vision', model: `azab-vision:${features}` });
     logId = started.id; startedAt = started.startedAt;
     await markRunning(logId);

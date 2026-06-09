@@ -41,6 +41,35 @@ Deno.serve(async (req) => {
     };
     if (!body.index || !body.query) return json({ error: 'index and query required' }, 400);
 
+    // Allowlist of permitted indexes (extend as needed)
+    const ALLOWED_INDEXES = (Deno.env.get('AZURE_SEARCH_ALLOWED_INDEXES') || 'maintenance,docs,knowledge').split(',').map(s => s.trim());
+    if (!ALLOWED_INDEXES.includes(body.index)) {
+      return json({ error: 'Invalid index' }, 400);
+    }
+    // Validate query length
+    if (typeof body.query !== 'string' || body.query.length > 500) {
+      return json({ error: 'Invalid query' }, 400);
+    }
+    // Validate top
+    const top = Math.min(Math.max(1, Number(body.top) || 5), 50);
+
+    // Validate filter: only safe characters (alphanumerics, spaces, basic operators, quotes)
+    let safeFilter: string | undefined;
+    if (body.filter) {
+      if (typeof body.filter !== 'string' || body.filter.length > 300 || !/^[\w\s'.,=<>!&|()\-/]+$/.test(body.filter)) {
+        return json({ error: 'Invalid filter' }, 400);
+      }
+      safeFilter = body.filter;
+    }
+    // Validate select: comma-separated field names only
+    let safeSelect: string | undefined;
+    if (body.select) {
+      if (typeof body.select !== 'string' || body.select.length > 300 || !/^[\w,\s]+$/.test(body.select)) {
+        return json({ error: 'Invalid select' }, 400);
+      }
+      safeSelect = body.select;
+    }
+
     const started = await startLog({ userId, operation: 'search', model: `azab-cognitivesearch:${body.index}` });
     logId = started.id; startedAt = started.startedAt;
     await markRunning(logId);
@@ -48,11 +77,11 @@ Deno.serve(async (req) => {
     const url = `${APIM_BASE}/azab-cognitivesearch/indexes/${encodeURIComponent(body.index)}/docs/search?api-version=${API_VER}`;
     const payload: Record<string, unknown> = {
       search: body.query,
-      top: body.top ?? 5,
+      top,
       queryType: 'simple',
     };
-    if (body.filter) payload.filter = body.filter;
-    if (body.select) payload.select = body.select;
+    if (safeFilter) payload.filter = safeFilter;
+    if (safeSelect) payload.select = safeSelect;
 
     const res = await fetch(url, {
       method: 'POST',
