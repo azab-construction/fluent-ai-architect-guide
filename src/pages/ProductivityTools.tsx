@@ -39,8 +39,7 @@ const ProductivityTools = () => {
     setLoading(true);
     setOutput('');
     try {
-      const messages = buildPrompt(active, input, opt);
-      const res = await callAzureOpenAI({ messages, temperature: 0.5, maxTokens: 1500, task: active });
+      const res = await runTool(active, input, opt);
       setOutput(res);
     } catch (e) {
       toast({ title: 'فشل الاستدعاء', description: e instanceof Error ? e.message : 'خطأ غير معروف', variant: 'destructive' });
