@@ -329,27 +329,11 @@ export default function WhatsApp() {
                   )}
 
                   {selectedMessage.media_url && (
-                    <div>
-                      <h4 className="font-medium text-sm mb-1">الملف المرفق:</h4>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm truncate flex-1">
-                          {selectedMessage.media_filename}
-                        </span>
-                        <a href={selectedMessage.media_url} target="_blank" rel="noreferrer">
-                          <Button size="sm" variant="outline" className="gap-1">
-                            <Download className="w-3 h-3" />
-                            تحميل
-                          </Button>
-                        </a>
-                      </div>
-                      {selectedMessage.media_mime_type?.startsWith('image') && (
-                        <img
-                          src={selectedMessage.media_url}
-                          alt="Media"
-                          className="mt-2 rounded max-h-48 object-cover w-full"
-                        />
-                      )}
-                    </div>
+                    <MediaAttachment
+                      path={selectedMessage.media_url}
+                      filename={selectedMessage.media_filename}
+                      mime={selectedMessage.media_mime_type}
+                    />
                   )}
 
                   {selectedMessage.ai_analysis && (
