@@ -20,26 +20,8 @@ const TOOLS: { key: ToolKey; label: string; icon: any; desc: string }[] = [
   { key: 'brainstorm', label: 'عصف ذهني', icon: Sparkles, desc: 'احصل على أفكار وحلول إبداعية.' },
 ];
 
-const buildPrompt = (tool: ToolKey, input: string, opt: Record<string, string>): AzureMessage[] => {
-  const system: AzureMessage = {
-    role: 'system',
-    content: 'أنت مساعد محترف يتقن العربية والإنجليزية. التزم بالتعليمات بدقة وقدم نتائج جاهزة للاستخدام.',
-  };
-  switch (tool) {
-    case 'summarize':
-      return [system, { role: 'user', content: `لخّص النص التالي في ${opt.style || 'نقاط موجزة'}:\n\n${input}` }];
-    case 'translate':
-      return [system, { role: 'user', content: `ترجم النص التالي إلى ${opt.lang || 'الإنجليزية'} مع الحفاظ على المعنى والأسلوب:\n\n${input}` }];
-    case 'rewrite':
-      return [system, { role: 'user', content: `أعد صياغة النص التالي بنبرة ${opt.tone || 'احترافية'} وبشكل أوضح وأقصر:\n\n${input}` }];
-    case 'email':
-      return [system, { role: 'user', content: `اكتب بريداً إلكترونياً ${opt.tone || 'احترافياً'} باللغة ${opt.lang || 'العربية'} حول الموضوع التالي. أضف عنواناً ثم نص الرسالة:\n\n${input}` }];
-    case 'extract':
-      return [system, { role: 'user', content: `استخرج من النص التالي: 1) المهام 2) التواريخ والمواعيد 3) القرارات 4) المسؤولين. أرجع النتيجة في قوائم منظمة:\n\n${input}` }];
-    case 'brainstorm':
-      return [system, { role: 'user', content: `قدّم ${opt.count || '8'} أفكار إبداعية وقابلة للتنفيذ حول:\n\n${input}` }];
-  }
-};
+// Prompt logic now lives in src/lib/azure-direct.ts (TOOL_TEMPLATES)
+
 
 const ProductivityTools = () => {
   const { toast } = useToast();
