@@ -8,7 +8,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import {
   MessageSquare, Github, HardDrive, Settings, BarChart3, CheckCircle, AlertCircle,
   Settings2, Phone, Cloud, Eye, FileSearch, Wand2, Search as SearchIcon, Bot,
-  Hammer, Box, LogOut, Plus, Trash2, Pencil, Check, X, Users
+  Hammer, Box, LogOut, Plus, Trash2, Pencil, Check, X, Users, Sparkles
 } from 'lucide-react';
 import { integrationStorage } from '@/lib/integration-storage';
 import { useAuth } from '@/hooks/useAuth';
