@@ -44,6 +44,7 @@ const App = () => (
           <Route path="/services/agent" element={<ProtectedRoute><QAAgent /></ProtectedRoute>} />
           <Route path="/services/arch-erp" element={<ProtectedRoute><ArchERP /></ProtectedRoute>} />
           <Route path="/engineering" element={<ProtectedRoute><EngineeringTools /></ProtectedRoute>} />
+          <Route path="/productivity" element={<ProtectedRoute><ProductivityTools /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
