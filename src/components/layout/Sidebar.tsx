@@ -20,6 +20,7 @@ interface ChatSession { id: string; title: string; updated_at: string; }
 
 const NAV_ITEMS = [
   { to: '/', icon: MessageSquare, label: 'الدردشة' },
+  { to: '/productivity', icon: Sparkles, label: 'أدوات الإنتاجية' },
   { to: '/engineering', icon: Box, label: 'الأدوات الهندسية' },
   { to: '/whatsapp', icon: Phone, label: 'واتساب الأعمال' },
   { to: '/azure', icon: Cloud, label: 'أدوات Azure' },
