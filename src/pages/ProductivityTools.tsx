@@ -8,10 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Copy, FileText, Languages, Mail, PenLine, ListChecks, Sparkles } from 'lucide-react';
-import { callAzureOpenAI, AzureMessage } from '@/lib/azure-direct';
+import { runTool, ToolKey } from '@/lib/azure-direct';
 import { useToast } from '@/hooks/use-toast';
-
-type ToolKey = 'summarize' | 'translate' | 'rewrite' | 'email' | 'extract' | 'brainstorm';
 
 const TOOLS: { key: ToolKey; label: string; icon: any; desc: string }[] = [
   { key: 'summarize', label: 'تلخيص نص', icon: FileText, desc: 'لخّص أي نص طويل في نقاط واضحة.' },
