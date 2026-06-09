@@ -35,11 +35,29 @@ Deno.serve(async (req) => {
     const body = await req.json() as {
       fileUrl?: string;
       fileBase64?: string;
-      model?: 'prebuilt-read' | 'prebuilt-layout' | 'prebuilt-document';
+      model?: string;
     };
     if (!body.fileUrl && !body.fileBase64) return json({ error: 'fileUrl or fileBase64 required' }, 400);
 
-    const model = body.model || 'prebuilt-read';
+    // Server-side allowlist for model
+    const ALLOWED_MODELS = ['prebuilt-read', 'prebuilt-layout', 'prebuilt-document'];
+    const model = ALLOWED_MODELS.includes(body.model || '') ? body.model! : 'prebuilt-read';
+
+    // Validate fileUrl: must be https
+    if (body.fileUrl) {
+      try {
+        const u = new URL(body.fileUrl);
+        if (u.protocol !== 'https:') return json({ error: 'fileUrl must be https' }, 400);
+        // Block private/local hosts
+        const host = u.hostname.toLowerCase();
+        if (/^(localhost|127\.|10\.|192\.168\.|169\.254\.|::1)/.test(host) || host.endsWith('.internal') || host.endsWith('.local')) {
+          return json({ error: 'fileUrl host not allowed' }, 400);
+        }
+      } catch {
+        return json({ error: 'Invalid fileUrl' }, 400);
+      }
+    }
+
     const started = await startLog({ userId, operation: 'docint', model: `azab-docint:${model}` });
     logId = started.id; startedAt = started.startedAt;
 
