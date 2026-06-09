@@ -18,6 +18,7 @@ import MaintenanceSearch from "./pages/services/MaintenanceSearch";
 import QAAgent from "./pages/services/QAAgent";
 import ArchERP from "./pages/services/ArchERP";
 import EngineeringTools from "./pages/EngineeringTools";
+import ProductivityTools from "./pages/ProductivityTools";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
