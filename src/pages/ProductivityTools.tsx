@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, Copy, FileText, Languages, Mail, PenLine, ListChecks, Sparkles } from 'lucide-react';
 import { runTool, ToolKey } from '@/lib/azure-direct';
 import { useToast } from '@/hooks/use-toast';
+import { LiveOperationStatus } from '@/components/azure/LiveOperationStatus';
 
 const TOOLS: { key: ToolKey; label: string; icon: any; desc: string }[] = [
   { key: 'summarize', label: 'تلخيص نص', icon: FileText, desc: 'لخّص أي نص طويل في نقاط واضحة.' },
@@ -194,6 +195,8 @@ const ProductivityTools = () => {
                       </div>
                     </div>
                   )}
+
+                  <LiveOperationStatus operation={t.key} limit={5} />
                 </Card>
               </TabsContent>
             ))}
