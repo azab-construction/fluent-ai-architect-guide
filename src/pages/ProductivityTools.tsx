@@ -195,6 +195,8 @@ const ProductivityTools = () => {
                       </div>
                     </div>
                   )}
+
+                  <LiveOperationStatus operation={t.key} limit={5} />
                 </Card>
               </TabsContent>
             ))}
