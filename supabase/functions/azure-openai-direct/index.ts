@@ -1,5 +1,7 @@
-// Direct Azure OpenAI proxy using AZURE_OPENAI_* secrets configured in edge env.
+// Direct Azure OpenAI proxy using AZURE_OPENAI_* secrets.
+// Per-tool usage tracking → ai_usage_logs (operation = task, status lifecycle, latency, tokens, summary).
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { startLog, markRunning, finishLog } from '../_shared/usage-log.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,11 +14,14 @@ interface Body {
   messages: ChatMessage[];
   temperature?: number;
   max_tokens?: number;
-  task?: string; // optional label for usage logs
+  task?: string; // tool key — used as `operation` in ai_usage_logs
 }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+
+  let logId: string | null = null;
+  let startedAt = Date.now();
 
   try {
     const authHeader = req.headers.get('Authorization');
@@ -43,9 +48,21 @@ Deno.serve(async (req) => {
     const body = (await req.json()) as Body;
     if (!body?.messages?.length) return json({ error: 'messages required' }, 400);
 
-    const url = `${endpoint.replace(/\/$/, '')}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
+    const operation = (body.task || 'productivity').toString().slice(0, 64);
+    const modelLabel = `azure:${deployment}`;
 
-    const start = Date.now();
+    // 1. pending
+    const started = await startLog({ userId, operation, model: modelLabel });
+    logId = started.id;
+    startedAt = started.startedAt;
+
+    // first user message preview for the log summary
+    const userPreview = body.messages.find(m => m.role === 'user')?.content?.slice(0, 160) ?? null;
+
+    // 2. running
+    await markRunning(logId);
+
+    const url = `${endpoint.replace(/\/$/, '')}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'api-key': apiKey },
@@ -55,33 +72,44 @@ Deno.serve(async (req) => {
         max_tokens: body.max_tokens ?? 1200,
       }),
     });
-    const latency = Date.now() - start;
     const text = await res.text();
     let parsed: any; try { parsed = JSON.parse(text); } catch { parsed = { raw: text }; }
-
-    const adminClient = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    );
     const usage = parsed?.usage ?? {};
-    await adminClient.from('ai_usage_logs').insert({
-      user_id: userId,
-      model: `azure:${deployment}${body.task ? `:${body.task}` : ''}`,
-      prompt_tokens: usage.prompt_tokens ?? null,
-      completion_tokens: usage.completion_tokens ?? null,
-      total_tokens: usage.total_tokens ?? null,
-      latency_ms: latency,
-      status: res.ok ? 'success' : 'error',
-      error_message: res.ok ? null : (parsed?.error?.message || `HTTP ${res.status}`),
-    });
+    const content: string = parsed?.choices?.[0]?.message?.content ?? '';
 
     if (!res.ok) {
-      return json({ error: parsed?.error?.message || `HTTP ${res.status}`, upstream_status: res.status }, 502);
+      const errMsg = parsed?.error?.message || `HTTP ${res.status}`;
+      // 3. failed
+      await finishLog(logId, {
+        startedAt,
+        status: 'failed',
+        summary: userPreview,
+        errorMessage: errMsg,
+        promptTokens: usage.prompt_tokens ?? null,
+        completionTokens: usage.completion_tokens ?? null,
+        totalTokens: usage.total_tokens ?? null,
+      });
+      return json({ error: errMsg, upstream_status: res.status }, 502);
     }
-    const content = parsed?.choices?.[0]?.message?.content ?? '';
-    return json({ content, usage, latency_ms: latency });
+
+    // 3. succeeded — summary: brief preview of the response
+    const responsePreview = content.slice(0, 160) || userPreview;
+    await finishLog(logId, {
+      startedAt,
+      status: 'succeeded',
+      summary: responsePreview,
+      promptTokens: usage.prompt_tokens ?? null,
+      completionTokens: usage.completion_tokens ?? null,
+      totalTokens: usage.total_tokens ?? null,
+    });
+
+    return json({ content, usage, latency_ms: Date.now() - startedAt, log_id: logId });
   } catch (e) {
-    return json({ error: e instanceof Error ? e.message : 'unknown' }, 500);
+    const msg = e instanceof Error ? e.message : 'unknown';
+    if (logId) {
+      try { await finishLog(logId, { startedAt, status: 'failed', errorMessage: msg }); } catch { /* ignore */ }
+    }
+    return json({ error: msg }, 500);
   }
 });
 
