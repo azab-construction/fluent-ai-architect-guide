@@ -1,73 +1,86 @@
-# Welcome to your Lovable project
 
-## Project info
+# مرحباً بك في مشروع العزبوت - منصة العزب ديف (Azabot - Azab Dev Platform)
 
-**URL**: https://lovable.dev/projects/8b787fc9-4dd0-49d3-9ed8-0c0cc5228263
+## معلومات المشروع
 
-## How can I edit this code?
+**المطور**: العزب ديف (Azab Dev)
+**التقنية الأساسية**: Rasa Pro + React + TypeScript
 
-There are several ways of editing your application.
+## كيف يمكنني تعديل هذا الكود؟
 
-**Use Lovable**
+هناك عدة طرق لتعديل التطبيق الخاص بك.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/8b787fc9-4dd0-49d3-9ed8-0c0cc5228263) and start prompting.
+**استخدم منصة العزب ديف (Azab Dev)**
 
-Changes made via Lovable will be committed automatically to this repo.
+ما عليك سوى زيارة منصة العزب ديف الخاصة بك والبدء في إعطاء الأوامر. التغييرات التي تتم عبر المنصة سيتم تطبيقها تلقائياً على هذا المستودع.
 
-**Use your preferred IDE**
+**استخدم بيئة التطوير المحلية (IDE)**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+إذا كنت تريد العمل محلياً، يمكنك استنساخ هذا المستودع ودفع التغييرات. المتطلب الوحيد هو تثبيت Node.js و npm.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+اتبع هذه الخطوات:
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# الخطوة 1: استنساخ المستودع
+git clone <رابط_ Git_ الخاص_ بك>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# الخطوة 2: انتقل إلى مجلد المشروع
+cd azabot
 
-# Step 3: Install the necessary dependencies.
-npm i
+# الخطوة 3: تثبيت التبعيات
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# الخطوة 4: تشغيل خادم التطوير
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+**تعديل ملف مباشرة في GitHub**
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- انتقل إلى الملف(ات) المطلوب(ة).
+- انقر على زر "تعديل" (أيقونة القلم).
+- قم بإجراء تغييراتك واحفظها.
 
-**Use GitHub Codespaces**
+## ما هي التقنيات المستخدمة؟
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+هذا المشروع مبني باستخدام:
 
-## What technologies are used for this project?
+- **Vite** - بناء سريع للتطبيق
+- **TypeScript** - أكواد بكتابة آمنة
+- **React** - مكتبة واجهات المستخدم
+- **shadcn-ui** - مكونات واجهة جاهزة
+- **Tailwind CSS** - تصميم سريع ومرن
+- **Mermaid.js** - مخططات بصرية وتحليلات
+- **React Dropzone** - رفع وتحليل الصور المعمارية
 
-This project is built with:
+## كيف يمكنني نشر هذا المشروع؟
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+ما عليك سوى فتح منصة العزب ديف والضغط على مشاركة -> نشر.
 
-## How can I deploy this project?
+## هل يمكنني ربط نطاق مخصص؟
 
-Simply open [Lovable](https://lovable.dev/projects/8b787fc9-4dd0-49d3-9ed8-0c0cc5228263) and click on Share -> Publish.
+نعم، يمكنك ذلك! انتقل إلى المشروع > الإعدادات > النطاقات وانقر على "ربط نطاق".
 
-## Can I connect a custom domain to my Lovable project?
+---
 
-Yes, you can!
+**تم التطوير بواسطة العزب ديف (Azab Dev) - حلول ذكاء اصطناعي للمشاريع المعمارية والتجارية**
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+---
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### 🛠️ طريقة التعديل (إذا كنت لا تريد النسخ واللصق):
+
+يمكنك استخدام أمر `sed` المباشر في WSL لتعديل الملف دون فتحه:
+
+```bash
+# انتقل إلى مجلد المشروع
+cd /mnt/d/Dev/AzBot/alazab-rasa-v4.1/azabot
+
+# قم بعمل نسخة احتياطية أولاً
+cp README.md README.md.backup
+
+# استبدل Lovable بـ Azab Dev (مع تعديل الرابط والنصوص)
+sed -i 's/Lovable/Azab Dev/g' README.md
+sed -i 's/lovable.dev/azabdev.com/g' README.md
+sed -i 's/\[Lovable Project\]/[Azab Dev Platform]/g' README.md
+
+
