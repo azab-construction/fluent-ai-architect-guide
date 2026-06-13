@@ -8,7 +8,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import {
   MessageSquare, Github, HardDrive, Settings, BarChart3, CheckCircle, AlertCircle,
   Settings2, Phone, Cloud, Eye, FileSearch, Wand2, Search as SearchIcon, Bot,
-  Hammer, Box, LogOut, Plus, Trash2, Pencil, Check, X, Users, Sparkles
+  Hammer, Box, LogOut, Plus, Trash2, Pencil, Check, X, Users, Sparkles, Building2
 } from 'lucide-react';
 import { integrationStorage } from '@/lib/integration-storage';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,6 +21,7 @@ interface ChatSession { id: string; title: string; updated_at: string; }
 const NAV_ITEMS = [
   { to: '/', icon: MessageSquare, label: 'الدردشة' },
   { to: '/productivity', icon: Sparkles, label: 'أدوات الإنتاجية' },
+  { to: '/architecture', icon: Building2, label: 'تحليل معماري' },
   { to: '/engineering', icon: Box, label: 'الأدوات الهندسية' },
   { to: '/whatsapp', icon: Phone, label: 'واتساب الأعمال' },
   { to: '/azure', icon: Cloud, label: 'أدوات Azure' },
