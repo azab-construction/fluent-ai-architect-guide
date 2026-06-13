@@ -151,7 +151,24 @@ All colors MUST be HSL.
     from {
       opacity: 0;
       transform: translateY(10px);
-    }
+}
+
+/* Mermaid charts */
+.mermaid-container svg {
+  max-width: 100%;
+  height: auto;
+  direction: ltr;
+}
+.mermaid-container .nodeLabel,
+.mermaid-container .edgeLabel,
+.mermaid-container text {
+  font-family: 'Segoe UI', Tahoma, Arial, sans-serif !important;
+}
+[dir="rtl"] .mermaid-container {
+  direction: ltr;
+  text-align: left;
+}
+
     to {
       opacity: 1;
       transform: translateY(0);
