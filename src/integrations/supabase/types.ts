@@ -210,6 +210,21 @@ export type Database = {
           },
         ]
       }
+      supcloud_keepalive: {
+        Row: {
+          id: number
+          marker: string
+        }
+        Insert: {
+          id: number
+          marker?: string
+        }
+        Update: {
+          id?: number
+          marker?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
