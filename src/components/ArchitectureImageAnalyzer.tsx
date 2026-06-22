@@ -132,11 +132,46 @@ export const ArchitectureImageAnalyzer: React.FC<{
 
   const analyzeAll = async () => {
     setBulkLoading(true);
-    for (const it of items.filter(i => i.status === 'idle' || i.status === 'error')) {
-      await analyzeOne(it);
-    }
+    const queue = items.filter(i => i.status === 'idle' || i.status === 'error');
+    let cursor = 0;
+    const workers = Array.from({ length: Math.max(1, Math.min(concurrency, 6)) }, async () => {
+      while (cursor < queue.length) {
+        const idx = cursor++;
+        await analyzeOne(queue[idx]);
+      }
+    });
+    await Promise.all(workers);
     setBulkLoading(false);
+    toast({ title: 'اكتمل التحليل', description: `تمت معالجة ${queue.length} صورة` });
   };
+
+  const exportJSON = () => {
+    const done = items.filter(i => i.status === 'done');
+    const blob = new Blob([JSON.stringify(done, null, 2)], { type: 'application/json' });
+    downloadBlob(blob, `arch-analysis-${Date.now()}.json`);
+  };
+
+  const exportCSV = () => {
+    const done = items.filter(i => i.status === 'done');
+    const headers = ['file', 'style', 'confidence', 'quality', 'colors', 'finish', 'objects', 'notes'];
+    const rows = done.map(i => {
+      const a = i.analysis || {};
+      return [
+        i.fileName, a.style ?? '', a.style_confidence ?? '', a.quality_rating ?? '',
+        (a.dominant_colors || []).join('|'),
+        (a.finish_elements || []).join('|'),
+        (a.architectural_objects || []).join('|'),
+        (a.notes || '').replace(/\n/g, ' '),
+      ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
+    });
+    const csv = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+    downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `arch-analysis-${Date.now()}.csv`);
+  };
+
+  const done = items.filter(i => i.status === 'done');
+  const processed = items.filter(i => i.status === 'done' || i.status === 'error').length;
+  const progress = items.length ? Math.round((processed / items.length) * 100) : 0;
+  const summary = computeSummary(done);
 
   return (
     <div className="space-y-4">
