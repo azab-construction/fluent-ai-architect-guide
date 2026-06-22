@@ -81,10 +81,11 @@ export const ArchitectureImageAnalyzer: React.FC<{
   const [notes, setNotes] = useState('');
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [concurrency, setConcurrency] = useState(3);
 
   const onDrop = useCallback(async (accepted: File[]) => {
     const newItems: AnalyzedItem[] = [];
-    for (const f of accepted.slice(0, 10)) {
+    for (const f of accepted.slice(0, 50)) {
       const preview = await resizeImage(f);
       newItems.push({
         id: crypto.randomUUID(),
@@ -94,13 +95,13 @@ export const ArchitectureImageAnalyzer: React.FC<{
         createdAt: new Date().toISOString(),
       });
     }
-    setItems(prev => [...newItems, ...prev]);
+    setItems(prev => [...newItems, ...prev].slice(0, 50));
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { 'image/*': ['.jpg', '.jpeg', '.png', '.webp'] },
-    maxFiles: 10,
+    maxFiles: 50,
     maxSize: 10 * 1024 * 1024,
   });
 
