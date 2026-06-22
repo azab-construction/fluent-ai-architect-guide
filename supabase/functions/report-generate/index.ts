@@ -81,8 +81,8 @@ Deno.serve(async (req) => {
       dataBlock = `سجل التحليلات المالية (${data?.length || 0} عملية):\n${JSON.stringify(data || [], null, 2)}`;
     } else if (body.source === 'whatsapp') {
       const { data } = await supabase
-        .from('whatsapp_messages').select('from_number,message_type,timestamp,text_body')
-        .gte('timestamp', since).limit(200);
+        .from('whatsapp_messages').select('from_number,from_name,message_type,created_at,text_content,ai_summary')
+        .gte('created_at', since).limit(200);
       dataBlock = `رسائل واتساب (${data?.length || 0}):\n${JSON.stringify(data || [], null, 2).slice(0, 30000)}`;
     } else if (body.source === 'architecture') {
       const { data } = await supabase
