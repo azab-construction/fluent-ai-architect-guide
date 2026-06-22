@@ -378,3 +378,37 @@ const Row: React.FC<{ icon: string; label: string; children: React.ReactNode }> 
     </div>
   </div>
 );
+
+const SummaryStat: React.FC<{ icon?: React.ReactNode; label: string; value: string }> = ({ icon, label, value }) => (
+  <div className="bg-accent/30 rounded p-2">
+    <p className="text-[10px] text-muted-foreground flex items-center gap-1">{icon}{label}</p>
+    <p className="font-medium mt-0.5 truncate" title={value}>{value}</p>
+  </div>
+);
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function computeSummary(items: AnalyzedItem[]) {
+  if (items.length === 0) return null;
+  const count = (arr: string[]) => {
+    const m = new Map<string, number>();
+    arr.forEach(s => m.set(s, (m.get(s) || 0) + 1));
+    return [...m.entries()].sort((a, b) => b[1] - a[1]);
+  };
+  const styles = count(items.map(i => i.analysis?.style || '').filter(Boolean));
+  const finish = count(items.flatMap(i => i.analysis?.finish_elements || []));
+  const objects = count(items.flatMap(i => i.analysis?.architectural_objects || []));
+  const qualities = items.map(i => i.analysis?.quality_rating || 0).filter(n => n > 0);
+  const avgQuality = qualities.length ? qualities.reduce((a, b) => a + b, 0) / qualities.length : 0;
+  return {
+    avgQuality,
+    topStyle: styles[0]?.[0] || '',
+    topFinish: finish.slice(0, 3).map(([k]) => k),
+    topObjects: objects.slice(0, 3).map(([k]) => k),
+  };
+}
