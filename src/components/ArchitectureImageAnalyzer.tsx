@@ -184,7 +184,7 @@ export const ArchitectureImageAnalyzer: React.FC<{
         <input {...getInputProps()} />
         <Upload className="w-10 h-10 mx-auto mb-2 text-muted-foreground" />
         <p className="text-sm font-medium">اسحب وأفلت الصور هنا، أو انقر للاختيار</p>
-        <p className="text-xs text-muted-foreground mt-1">JPG, PNG, WEBP — حتى 10 صور، 10MB/صورة</p>
+        <p className="text-xs text-muted-foreground mt-1">JPG, PNG, WEBP — حتى 50 صورة، 10MB/صورة</p>
       </div>
 
       <div>
@@ -198,16 +198,45 @@ export const ArchitectureImageAnalyzer: React.FC<{
       </div>
 
       {items.length > 0 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">{items.length} صورة</p>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setItems([])}>مسح الكل</Button>
-            <Button size="sm" onClick={analyzeAll} disabled={bulkLoading || items.every(i => i.status === 'done' || i.status === 'loading')}>
-              {bulkLoading ? <Loader2 className="w-4 h-4 ml-1 animate-spin" /> : <Sparkles className="w-4 h-4 ml-1" />}
-              تحليل الكل
-            </Button>
+        <Card className="p-3 space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <p className="text-sm">
+              <span className="font-medium">{items.length}</span> صورة —
+              <span className="text-muted-foreground"> منجزة {done.length} / فشل {items.filter(i=>i.status==='error').length}</span>
+            </p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <label className="text-xs text-muted-foreground">التوازي:</label>
+              <select
+                className="text-xs border rounded px-2 py-1 bg-background"
+                value={concurrency}
+                onChange={e => setConcurrency(Number(e.target.value))}
+                disabled={bulkLoading}
+              >
+                {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}</option>)}
+              </select>
+              <Button variant="outline" size="sm" onClick={() => setItems([])} disabled={bulkLoading}>مسح الكل</Button>
+              <Button variant="outline" size="sm" onClick={exportCSV} disabled={done.length === 0}>
+                <Download className="w-4 h-4 ml-1" /> CSV
+              </Button>
+              <Button variant="outline" size="sm" onClick={exportJSON} disabled={done.length === 0}>
+                <FileJson className="w-4 h-4 ml-1" /> JSON
+              </Button>
+              <Button size="sm" onClick={analyzeAll} disabled={bulkLoading || items.every(i => i.status === 'done' || i.status === 'loading')}>
+                {bulkLoading ? <Loader2 className="w-4 h-4 ml-1 animate-spin" /> : <Sparkles className="w-4 h-4 ml-1" />}
+                تحليل الكل
+              </Button>
+            </div>
           </div>
-        </div>
+          {bulkLoading && <Progress value={progress} className="h-2" />}
+          {summary && (
+            <div className="border-t pt-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+              <SummaryStat icon={<BarChart3 className="w-3 h-3" />} label="متوسط الجودة" value={`${summary.avgQuality.toFixed(1)} / 5`} />
+              <SummaryStat label="النمط الأكثر" value={summary.topStyle || '—'} />
+              <SummaryStat label="أبرز التشطيبات" value={summary.topFinish.join('، ') || '—'} />
+              <SummaryStat label="أبرز العناصر" value={summary.topObjects.join('، ') || '—'} />
+            </div>
+          )}
+        </Card>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
