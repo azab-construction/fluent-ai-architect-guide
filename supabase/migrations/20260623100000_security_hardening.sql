@@ -135,5 +135,26 @@ using (
 );
 
 -- Function search_path hardening for functions touched/created by current migrations.
-alter function if exists public.set_updated_at() set search_path = public;
-alter function if exists public.has_role(uuid, public.app_role) set search_path = public;
+-- PostgreSQL does not support `alter function if exists ...` on all versions,
+-- so harden any matching public functions dynamically.
+do $$
+declare
+  target record;
+begin
+  for target in
+    select
+      p.proname,
+      pg_get_function_identity_arguments(p.oid) as args
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.proname in ('set_updated_at', 'has_role')
+  loop
+    execute format(
+      'alter function public.%I(%s) set search_path = public',
+      target.proname,
+      target.args
+    );
+  end loop;
+end
+$$;
