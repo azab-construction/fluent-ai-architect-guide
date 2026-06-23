@@ -23,6 +23,7 @@ import EngineeringTools from "./pages/EngineeringTools";
 import ProductivityTools from "./pages/ProductivityTools";
 import ArchitectureAnalysis from "./pages/ArchitectureAnalysis";
 import FinanceAnalysis from "./pages/FinanceAnalysis";
+import FinanceModule from "./pages/finance/FinanceModule";
 import ContractsGenerator from "./pages/tools/ContractsGenerator";
 import SmartReports from "./pages/tools/SmartReports";
 import TaskBoard from "./pages/tools/TaskBoard";
@@ -60,6 +61,7 @@ const App = () => (
           <Route path="/productivity" element={<ProtectedRoute><ProductivityTools /></ProtectedRoute>} />
           <Route path="/architecture" element={<ProtectedRoute><ArchitectureAnalysis /></ProtectedRoute>} />
           <Route path="/finance" element={<ProtectedRoute><FinanceAnalysis /></ProtectedRoute>} />
+          <Route path="/finance/module" element={<ProtectedRoute><FinanceModule /></ProtectedRoute>} />
           <Route path="/tools/contracts" element={<ProtectedRoute><ContractsGenerator /></ProtectedRoute>} />
           <Route path="/tools/reports" element={<ProtectedRoute><SmartReports /></ProtectedRoute>} />
           <Route path="/tools/tasks" element={<ProtectedRoute><TaskBoard /></ProtectedRoute>} />
