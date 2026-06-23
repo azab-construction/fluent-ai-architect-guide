@@ -1,5 +1,7 @@
-// Azure APIM AI Chat proxy — routes to azab-openai (gpt-5) or aicu-openai (gpt-4.1)
+// Azure AI Chat proxy with shared deployment resolution.
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { callAzureOpenAIChat } from '../_shared/azure-config.ts';
+import { startLog, markRunning, finishLog } from '../_shared/usage-log.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,25 +9,27 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-const APIM_BASE = 'https://azabai.azure-api.net';
-
 interface ChatMessage { role: 'system' | 'user' | 'assistant'; content: string }
 interface ChatRequest {
-  model?: 'gpt-5' | 'gpt-4.1';
+  model?: string;
+  deployment?: string;
+  api_version?: string;
   messages: ChatMessage[];
   temperature?: number;
   max_tokens?: number;
+  task?: string;
 }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
+  let logId: string | null = null;
+  let startedAt = Date.now();
+
   try {
-    // Auth check
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return json({ error: 'Unauthorized' }, 401);
-    }
+    if (!authHeader?.startsWith('Bearer ')) return json({ error: 'Unauthorized' }, 401);
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_ANON_KEY')!,
@@ -36,75 +40,64 @@ Deno.serve(async (req) => {
     if (claimErr || !claims?.claims) return json({ error: 'Unauthorized' }, 401);
     const userId = claims.claims.sub as string;
 
-    const apimKey = Deno.env.get('ALAZAB_AI_PROD_KEY');
-    if (!apimKey) return json({ error: 'ALAZAB_AI_PROD_KEY not configured' }, 500);
-
     const body = (await req.json()) as ChatRequest;
     if (!body?.messages || !Array.isArray(body.messages) || body.messages.length === 0) {
       return json({ error: 'messages array required' }, 400);
     }
-    const model = body.model === 'gpt-4.1' ? 'gpt-4.1' : 'gpt-5';
 
-    // Route + header by model
-    const route = model === 'gpt-5' ? '/azab-openai/openai/v1/chat/completions'
-                                    : '/aicu-openai/openai/v1/chat/completions';
-    const headerName = model === 'gpt-5' ? 'api-key' : 'Ocp-Apim-Subscription-Key';
-    const url = `${APIM_BASE}${route}`;
+    const operation = (body.task || 'chat').toString().slice(0, 64);
+    const modelHint = body.model || body.deployment || 'default';
+    const started = await startLog({ userId, operation, model: `azure:${modelHint}` });
+    logId = started.id;
+    startedAt = started.startedAt;
+    await markRunning(logId);
 
-    const payload: Record<string, unknown> = {
-      model,
+    const { response, body: upstreamBody, config } = await callAzureOpenAIChat({
+      model: body.model,
+      deployment: body.deployment,
+      apiVersion: body.api_version,
       messages: body.messages,
-    };
-    if (typeof body.temperature === 'number') payload.temperature = body.temperature;
-    if (typeof body.max_tokens === 'number') payload.max_tokens = body.max_tokens;
-
-    const adminClient = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    );
-
-    const start = Date.now();
-    let upstreamStatus = 0;
-    let upstreamBody: any = null;
-    let errMsg: string | null = null;
-
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', [headerName]: apimKey },
-        body: JSON.stringify(payload),
-      });
-      upstreamStatus = res.status;
-      const text = await res.text();
-      try { upstreamBody = JSON.parse(text); } catch { upstreamBody = { raw: text }; }
-      if (!res.ok) errMsg = upstreamBody?.error?.message || `HTTP ${res.status}`;
-    } catch (e) {
-      errMsg = e instanceof Error ? e.message : 'network error';
-    }
-
-    const latency = Date.now() - start;
-    const usage = upstreamBody?.usage ?? {};
-
-    await adminClient.from('ai_usage_logs').insert({
-      user_id: userId,
-      model,
-      prompt_tokens: usage.prompt_tokens ?? null,
-      completion_tokens: usage.completion_tokens ?? null,
-      total_tokens: usage.total_tokens ?? null,
-      latency_ms: latency,
-      status: errMsg ? 'error' : 'success',
-      error_message: errMsg,
+      temperature: body.temperature,
+      maxTokens: body.max_tokens,
     });
 
-    if (errMsg) {
-      const status = upstreamStatus === 429 ? 429 : upstreamStatus === 402 ? 402 : 502;
-      return json({ error: errMsg, upstream_status: upstreamStatus }, status);
+    const usage = upstreamBody?.usage ?? {};
+    const content = upstreamBody?.choices?.[0]?.message?.content ?? '';
+
+    if (!response.ok) {
+      const errMsg = upstreamBody?.error?.message || `HTTP ${response.status}`;
+      await finishLog(logId, {
+        startedAt,
+        status: 'failed',
+        errorMessage: errMsg,
+        promptTokens: usage.prompt_tokens ?? null,
+        completionTokens: usage.completion_tokens ?? null,
+        totalTokens: usage.total_tokens ?? null,
+      });
+      return json({ error: errMsg, upstream_status: response.status, deployment: config.deployment }, response.status === 429 ? 429 : 502);
     }
 
-    const content = upstreamBody?.choices?.[0]?.message?.content ?? '';
-    return json({ content, model, usage, latency_ms: latency }, 200);
+    await finishLog(logId, {
+      startedAt,
+      status: 'succeeded',
+      summary: content.slice(0, 160),
+      promptTokens: usage.prompt_tokens ?? null,
+      completionTokens: usage.completion_tokens ?? null,
+      totalTokens: usage.total_tokens ?? null,
+    });
+
+    return json({
+      content,
+      model: body.model || config.deployment,
+      deployment: config.deployment,
+      api_version: config.apiVersion,
+      usage,
+      latency_ms: Date.now() - startedAt,
+      log_id: logId,
+    }, 200);
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'unknown';
+    if (logId) { try { await finishLog(logId, { startedAt, status: 'failed', errorMessage: msg }); } catch { /* ignore */ } }
     return json({ error: msg }, 500);
   }
 });
