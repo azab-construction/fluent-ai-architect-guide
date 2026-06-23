@@ -9,7 +9,7 @@ import {
   MessageSquare, Github, HardDrive, Settings, BarChart3, CheckCircle, AlertCircle,
   Settings2, Phone, Cloud, Eye, FileSearch, Wand2, Search as SearchIcon, Bot,
   Hammer, Box, LogOut, Plus, Trash2, Pencil, Check, X, Users, Sparkles, Building2, Wallet,
-  FileText, BarChart3 as BarChartIcon, CheckSquare
+  FileText, BarChart3 as BarChartIcon, CheckSquare, Calculator
 } from 'lucide-react';
 import { integrationStorage } from '@/lib/integration-storage';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,6 +24,7 @@ const NAV_ITEMS = [
   { to: '/tools/tasks', icon: CheckSquare, label: 'المهام والمشاريع' },
   { to: '/tools/contracts', icon: FileText, label: 'العقود والمستندات' },
   { to: '/tools/reports', icon: BarChartIcon, label: 'التقارير الذكية' },
+  { to: '/finance/module', icon: Calculator, label: 'موديول المالية' },
   { to: '/finance', icon: Wallet, label: 'التحليل المالي' },
   { to: '/architecture', icon: Building2, label: 'تحليل معماري' },
   { to: '/productivity', icon: Sparkles, label: 'أدوات الكتابة' },
