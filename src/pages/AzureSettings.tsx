@@ -8,7 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import {
   Cloud, CheckCircle2, XCircle, Loader2, RefreshCw, Activity, Cpu, Bot,
-  Wallet, FileText, ListChecks, BarChart3, Send, Settings as SettingsIcon
+  Wallet, FileText, ListChecks, BarChart3, Send, Settings as SettingsIcon,
+  Key, ExternalLink, ShieldCheck, AlertTriangle, Copy
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
