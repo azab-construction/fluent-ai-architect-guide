@@ -8,7 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import {
   Cloud, CheckCircle2, XCircle, Loader2, RefreshCw, Activity, Cpu, Bot,
-  Wallet, FileText, ListChecks, BarChart3, Send, Settings as SettingsIcon
+  Wallet, FileText, ListChecks, BarChart3, Send, Settings as SettingsIcon,
+  Key, ExternalLink, ShieldCheck, AlertTriangle, Copy
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -186,12 +187,103 @@ const AzureSettings = () => {
             </CardContent>
           </Card>
 
-          <Tabs defaultValue="health" className="space-y-4">
-            <TabsList className="grid grid-cols-3 w-full md:w-auto">
+          <Tabs defaultValue="credentials" className="space-y-4">
+            <TabsList className="grid grid-cols-4 w-full md:w-auto">
+              <TabsTrigger value="credentials" className="gap-2"><Key className="w-4 h-4" /> بيانات الاتصال</TabsTrigger>
               <TabsTrigger value="health" className="gap-2"><Activity className="w-4 h-4" /> الاتصال</TabsTrigger>
               <TabsTrigger value="models" className="gap-2"><Cpu className="w-4 h-4" /> النماذج ({AZURE_MODELS.length})</TabsTrigger>
               <TabsTrigger value="agents" className="gap-2"><Bot className="w-4 h-4" /> الوكلاء ({AZURE_AGENTS.length})</TabsTrigger>
             </TabsList>
+
+            {/* CREDENTIALS */}
+            <TabsContent value="credentials" className="space-y-4">
+              <Card className="border-r-4 border-r-blue-500 bg-blue-500/5">
+                <CardContent className="p-4 flex items-start gap-3">
+                  <ShieldCheck className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm space-y-1">
+                    <p className="font-semibold">أين تُدخل بيانات الاتصال؟</p>
+                    <p className="text-muted-foreground text-xs leading-relaxed">
+                      مفاتيح Azure وعناوين النقاط النهائية تُحفظ كـ <strong>أسرار خادم</strong> في Lovable Cloud
+                      (وليس في المتصفح) لحمايتها. لتحديث أي قيمة، اطلب من Lovable في الدردشة:
+                      <em> "حدّث سر AZURE_OPENAI_API_KEY"</em> — وسيظهر لك حقل إدخال آمن.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                {[
+                  { name: 'AZURE_OPENAI_API_KEY', label: 'مفتاح Azure OpenAI', desc: 'المفتاح السري من بوابة Azure' },
+                  { name: 'AZURE_OPENAI_ENDPOINT', label: 'نقطة النهاية (Endpoint)', desc: 'مثال: https://your-resource.openai.azure.com' },
+                  { name: 'AZURE_OPENAI_DEPLOYMENT', label: 'اسم النشر (Deployment)', desc: 'مثل: gpt-4o أو gpt-4-turbo' },
+                  { name: 'AZURE_OPENAI_API_VERSION', label: 'إصدار API', desc: 'افتراضي: 2024-08-01-preview' },
+                  { name: 'ALAZAB_AI_PROD_KEY', label: 'مفتاح APIM للوكلاء', desc: 'للوصول لـ Document Intelligence و Vision و Search' },
+                ].map(s => {
+                  const configured = health?.checks.some(c =>
+                    c.configured && (
+                      (s.name.startsWith('AZURE_OPENAI') && c.service === 'azure-openai') ||
+                      (s.name === 'ALAZAB_AI_PROD_KEY' && c.service !== 'azure-openai')
+                    )
+                  ) ?? false;
+                  return (
+                    <Card key={s.name}>
+                      <CardContent className="p-4 space-y-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <Key className="w-4 h-4 text-muted-foreground" />
+                            <div>
+                              <p className="font-semibold text-sm">{s.label}</p>
+                              <code className="text-[10px] text-muted-foreground" dir="ltr">{s.name}</code>
+                            </div>
+                          </div>
+                          {configured ? (
+                            <Badge className="gap-1 text-[10px] bg-green-500/15 text-green-600 border border-green-500/30">
+                              <CheckCircle2 className="w-3 h-3" /> مهيأ
+                            </Badge>
+                          ) : (
+                            <Badge variant="destructive" className="gap-1 text-[10px]">
+                              <AlertTriangle className="w-3 h-3" /> غير مهيأ
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">{s.desc}</p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => {
+                            navigator.clipboard.writeText(s.name);
+                            toast({ title: 'تم النسخ', description: `${s.name} — الصقه في الدردشة مع كلمة "حدّث سر"` });
+                          }}
+                        >
+                          <Copy className="w-3 h-3 ml-2" /> نسخ الاسم للتحديث
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30">
+                <CardContent className="p-5 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-lg bg-primary/20 flex items-center justify-center">
+                      <Key className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-semibold">طريقة تعديل بيانات الاتصال</p>
+                      <p className="text-xs text-muted-foreground">3 خطوات بسيطة وآمنة 100%</p>
+                    </div>
+                  </div>
+                  <ol className="text-xs space-y-1.5 text-muted-foreground list-decimal pr-5">
+                    <li>انسخ اسم السر الذي تريد تحديثه من البطاقات أعلاه.</li>
+                    <li>اكتب في دردشة Lovable: <code className="bg-muted px-1.5 py-0.5 rounded" dir="ltr">حدّث سر AZURE_OPENAI_API_KEY</code></li>
+                    <li>سيظهر لك حقل إدخال آمن — الصق القيمة الجديدة واحفظ.</li>
+                  </ol>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
 
             {/* HEALTH */}
             <TabsContent value="health" className="space-y-3">
