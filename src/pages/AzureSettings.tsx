@@ -1,22 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
-import {
-  Cloud, CheckCircle2, XCircle, Loader2, RefreshCw, Activity, Cpu, Bot,
-  Wallet, FileText, ListChecks, BarChart3, Send, Settings as SettingsIcon,
-  Key, ExternalLink, ShieldCheck, AlertTriangle, Copy
-} from 'lucide-react';
+import { Cloud, Activity, Cpu, Bot, CheckCircle2, XCircle, Loader2, RefreshCw, Send } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import {
-  AZURE_MODELS, AZURE_AGENTS, AZURE_HEALTH_LABELS,
-  type AzureAgentConfig, type AzureModelConfig,
-} from '@/lib/azure-agents-config';
+import { AZURE_AGENTS, AZURE_HEALTH_LABELS, AZURE_MODELS, type AzureAgentConfig, type AzureModelConfig } from '@/lib/azure-agents-config';
 
 interface HealthCheck {
   service: string;
@@ -33,19 +25,23 @@ interface HealthResponse {
   timestamp: string;
 }
 
-const agentIcons: Record<AzureAgentConfig['icon'], React.ReactNode> = {
-  finance: <Wallet className="w-5 h-5" />,
-  contract: <FileText className="w-5 h-5" />,
-  project: <ListChecks className="w-5 h-5" />,
-  report: <BarChart3 className="w-5 h-5" />,
-};
+const secretNames = [
+  'AZURE_OPENAI_API_KEY',
+  'AZURE_OPENAI_ENDPOINT',
+  'AZURE_OPENAI_DEFAULT_DEPLOYMENT',
+  'AZURE_OPENAI_DEPLOYMENTS_JSON',
+  'AZURE_OPENAI_API_VERSION',
+  'AZURE_APIM_BASE_URL',
+  'AZURE_APIM_SUBSCRIPTION_KEY',
+  'ALAZAB_AI_PROD_KEY',
+];
 
-const StatusDot = ({ ok, configured }: { ok: boolean; configured: boolean }) => {
-  if (!configured) return <span className="w-2.5 h-2.5 rounded-full bg-muted-foreground/40 inline-block" />;
-  return (
-    <span className={`w-2.5 h-2.5 rounded-full inline-block ${ok ? 'bg-green-500 animate-pulse' : 'bg-destructive'}`} />
-  );
-};
+function statusBadge(ok?: boolean, loading?: boolean) {
+  if (loading) return <Badge variant="outline"><Loader2 className="w-3 h-3 ml-1 animate-spin" />جاري</Badge>;
+  if (ok === true) return <Badge><CheckCircle2 className="w-3 h-3 ml-1" />ناجح</Badge>;
+  if (ok === false) return <Badge variant="destructive"><XCircle className="w-3 h-3 ml-1" />فشل</Badge>;
+  return null;
+}
 
 const AzureSettings = () => {
   const { toast } = useToast();
@@ -72,33 +68,37 @@ const AzureSettings = () => {
 
   useEffect(() => { runHealth(); }, []);
 
+  const callModel = async (model: AzureModelConfig, messages: Array<{ role: 'system' | 'user'; content: string }>, task: string) => {
+    const { data, error } = await supabase.functions.invoke('azure-ai-chat', {
+      body: {
+        task,
+        model: model.id,
+        deployment: model.deployment,
+        api_version: model.apiVersion,
+        temperature: model.defaultTemperature,
+        max_tokens: model.maxTokens,
+        messages,
+      },
+    });
+    if (error) throw error;
+    return data;
+  };
+
   const testModel = async (model: AzureModelConfig) => {
     setModelTests(prev => ({ ...prev, [model.id]: { loading: true } }));
     const started = Date.now();
     try {
-      const { data, error } = await supabase.functions.invoke('azure-openai-direct', {
-        body: {
-          task: `model-test:${model.id}`,
-          temperature: 0,
-          max_tokens: 32,
-          messages: [
-            { role: 'system', content: 'أجب بكلمة واحدة فقط: pong' },
-            { role: 'user', content: 'ping' },
-          ],
-        },
-      });
-      if (error) throw error;
-      const latency = Date.now() - started;
-      const content = (data?.content as string) || '';
+      const data = await callModel(model, [
+        { role: 'system', content: 'أجب بكلمة واحدة فقط: pong' },
+        { role: 'user', content: 'ping' },
+      ], `model-test:${model.id}`);
+      const resolved = data?.deployment ? ` · ${data.deployment}` : '';
       setModelTests(prev => ({
         ...prev,
-        [model.id]: { loading: false, ok: true, latency, msg: content.slice(0, 80) || 'OK' },
+        [model.id]: { loading: false, ok: true, latency: Date.now() - started, msg: `${data?.content || 'OK'}${resolved}` },
       }));
     } catch (e: any) {
-      setModelTests(prev => ({
-        ...prev,
-        [model.id]: { loading: false, ok: false, latency: Date.now() - started, msg: e.message },
-      }));
+      setModelTests(prev => ({ ...prev, [model.id]: { loading: false, ok: false, latency: Date.now() - started, msg: e.message } }));
     }
   };
 
@@ -109,26 +109,16 @@ const AzureSettings = () => {
   };
 
   const runAgent = async () => {
-    if (!agentPrompt.trim()) {
-      toast({ title: 'اكتب مهمة للوكيل أولاً', variant: 'destructive' });
-      return;
-    }
-    setAgentLoading(true); setAgentResponse('');
+    if (!agentPrompt.trim()) return toast({ title: 'اكتب مهمة للوكيل أولاً', variant: 'destructive' });
+    setAgentLoading(true);
+    setAgentResponse('');
     try {
       const model = AZURE_MODELS.find(m => m.id === activeAgent.modelId) || AZURE_MODELS[0];
-      const { data, error } = await supabase.functions.invoke('azure-openai-direct', {
-        body: {
-          task: `agent:${activeAgent.id}`,
-          temperature: model.defaultTemperature,
-          max_tokens: model.maxTokens,
-          messages: [
-            { role: 'system', content: activeAgent.systemPrompt },
-            { role: 'user', content: agentPrompt.trim() },
-          ],
-        },
-      });
-      if (error) throw error;
-      setAgentResponse((data?.content as string) || 'لا توجد استجابة');
+      const data = await callModel(model, [
+        { role: 'system', content: activeAgent.systemPrompt },
+        { role: 'user', content: agentPrompt.trim() },
+      ], `agent:${activeAgent.id}`);
+      setAgentResponse(data?.content || 'لا توجد استجابة');
     } catch (e: any) {
       toast({ title: 'فشل تشغيل الوكيل', description: e.message, variant: 'destructive' });
       setAgentResponse(`خطأ: ${e.message}`);
@@ -144,299 +134,130 @@ const AzureSettings = () => {
       <Sidebar />
       <div className="flex-1 overflow-auto p-6">
         <div className="max-w-6xl mx-auto space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white">
+              <div className="w-11 h-11 rounded-lg bg-primary/15 flex items-center justify-center">
                 <Cloud className="w-5 h-5" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">إعدادات Azure AI · النماذج والوكلاء</h1>
-                <p className="text-xs text-muted-foreground">
-                  مراقبة صحة الاتصال · {AZURE_MODELS.length} نماذج · {AZURE_AGENTS.length} وكلاء جاهزون
-                </p>
+                <h1 className="text-2xl font-bold">إعدادات Azure AI</h1>
+                <p className="text-xs text-muted-foreground">فحص الاتصال · اختبار الموديلات · تشغيل الوكلاء</p>
               </div>
             </div>
-            <Button onClick={runHealth} disabled={healthLoading} size="sm" variant="outline">
+            <Button onClick={runHealth} disabled={healthLoading} variant="outline" size="sm">
               {healthLoading ? <Loader2 className="w-4 h-4 ml-2 animate-spin" /> : <RefreshCw className="w-4 h-4 ml-2" />}
               فحص الاتصال
             </Button>
           </div>
 
-          {/* Overall banner */}
-          <Card className={`border-r-4 ${overallOk ? 'border-r-green-500 bg-green-500/5' : 'border-r-amber-500 bg-amber-500/5'}`}>
-            <CardContent className="p-4 flex items-center justify-between flex-wrap gap-3">
-              <div className="flex items-center gap-3">
-                {overallOk ? <CheckCircle2 className="w-6 h-6 text-green-500" /> : <Activity className="w-6 h-6 text-amber-500" />}
-                <div>
-                  <p className="font-semibold">
-                    {health
-                      ? `${health.summary.ok} / ${health.summary.total} خدمات متصلة`
-                      : 'جاري فحص الاتصال...'}
-                  </p>
-                  {health && (
-                    <p className="text-xs text-muted-foreground">
-                      آخر فحص: {new Date(health.timestamp).toLocaleTimeString('ar-EG')}
-                    </p>
-                  )}
-                </div>
+          <Card className={overallOk ? 'border-green-500/40' : 'border-amber-500/40'}>
+            <CardContent className="p-4 flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Activity className="w-5 h-5" />
+                <span className="font-semibold">
+                  {health ? `${health.summary.ok} / ${health.summary.total} خدمات متصلة` : 'لم يتم الفحص بعد'}
+                </span>
               </div>
-              <Badge variant={overallOk ? 'default' : 'secondary'} className="gap-1">
-                {overallOk ? 'النظام جاهز للإنتاج' : 'يلزم مراجعة'}
-              </Badge>
+              <Badge variant={overallOk ? 'default' : 'secondary'}>{overallOk ? 'جاهز' : 'يلزم مراجعة'}</Badge>
             </CardContent>
           </Card>
 
-          <Tabs defaultValue="credentials" className="space-y-4">
+          <Tabs defaultValue="health" className="space-y-4">
             <TabsList className="grid grid-cols-4 w-full md:w-auto">
-              <TabsTrigger value="credentials" className="gap-2"><Key className="w-4 h-4" /> بيانات الاتصال</TabsTrigger>
-              <TabsTrigger value="health" className="gap-2"><Activity className="w-4 h-4" /> الاتصال</TabsTrigger>
-              <TabsTrigger value="models" className="gap-2"><Cpu className="w-4 h-4" /> النماذج ({AZURE_MODELS.length})</TabsTrigger>
-              <TabsTrigger value="agents" className="gap-2"><Bot className="w-4 h-4" /> الوكلاء ({AZURE_AGENTS.length})</TabsTrigger>
+              <TabsTrigger value="health">الاتصال</TabsTrigger>
+              <TabsTrigger value="models">النماذج</TabsTrigger>
+              <TabsTrigger value="agents">الوكلاء</TabsTrigger>
+              <TabsTrigger value="secrets">الأسرار</TabsTrigger>
             </TabsList>
 
-            {/* CREDENTIALS */}
-            <TabsContent value="credentials" className="space-y-4">
-              <Card className="border-r-4 border-r-blue-500 bg-blue-500/5">
-                <CardContent className="p-4 flex items-start gap-3">
-                  <ShieldCheck className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                  <div className="text-sm space-y-1">
-                    <p className="font-semibold">أين تُدخل بيانات الاتصال؟</p>
-                    <p className="text-muted-foreground text-xs leading-relaxed">
-                      مفاتيح Azure وعناوين النقاط النهائية تُحفظ كـ <strong>أسرار خادم</strong> في Lovable Cloud
-                      (وليس في المتصفح) لحمايتها. لتحديث أي قيمة، اطلب من Lovable في الدردشة:
-                      <em> "حدّث سر AZURE_OPENAI_API_KEY"</em> — وسيظهر لك حقل إدخال آمن.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div className="grid gap-3 md:grid-cols-2">
-                {[
-                  { name: 'AZURE_OPENAI_API_KEY', label: 'مفتاح Azure OpenAI', desc: 'المفتاح السري من بوابة Azure' },
-                  { name: 'AZURE_OPENAI_ENDPOINT', label: 'نقطة النهاية (Endpoint)', desc: 'مثال: https://your-resource.openai.azure.com' },
-                  { name: 'AZURE_OPENAI_DEPLOYMENT', label: 'اسم النشر (Deployment)', desc: 'مثل: gpt-4o أو gpt-4-turbo' },
-                  { name: 'AZURE_OPENAI_API_VERSION', label: 'إصدار API', desc: 'افتراضي: 2024-08-01-preview' },
-                  { name: 'ALAZAB_AI_PROD_KEY', label: 'مفتاح APIM للوكلاء', desc: 'للوصول لـ Document Intelligence و Vision و Search' },
-                ].map(s => {
-                  const configured = health?.checks.some(c =>
-                    c.configured && (
-                      (s.name.startsWith('AZURE_OPENAI') && c.service === 'azure-openai') ||
-                      (s.name === 'ALAZAB_AI_PROD_KEY' && c.service !== 'azure-openai')
-                    )
-                  ) ?? false;
-                  return (
-                    <Card key={s.name}>
-                      <CardContent className="p-4 space-y-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <Key className="w-4 h-4 text-muted-foreground" />
-                            <div>
-                              <p className="font-semibold text-sm">{s.label}</p>
-                              <code className="text-[10px] text-muted-foreground" dir="ltr">{s.name}</code>
-                            </div>
-                          </div>
-                          {configured ? (
-                            <Badge className="gap-1 text-[10px] bg-green-500/15 text-green-600 border border-green-500/30">
-                              <CheckCircle2 className="w-3 h-3" /> مهيأ
-                            </Badge>
-                          ) : (
-                            <Badge variant="destructive" className="gap-1 text-[10px]">
-                              <AlertTriangle className="w-3 h-3" /> غير مهيأ
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground">{s.desc}</p>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="w-full"
-                          onClick={() => {
-                            navigator.clipboard.writeText(s.name);
-                            toast({ title: 'تم النسخ', description: `${s.name} — الصقه في الدردشة مع كلمة "حدّث سر"` });
-                          }}
-                        >
-                          <Copy className="w-3 h-3 ml-2" /> نسخ الاسم للتحديث
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-
-              <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30">
-                <CardContent className="p-5 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-lg bg-primary/20 flex items-center justify-center">
-                      <Key className="w-5 h-5 text-primary" />
+            <TabsContent value="health" className="grid gap-3 md:grid-cols-2">
+              {(health?.checks || []).map(c => (
+                <Card key={c.service}>
+                  <CardContent className="p-4 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-semibold text-sm">{AZURE_HEALTH_LABELS[c.service] || c.service}</p>
+                      {statusBadge(c.ok)}
                     </div>
-                    <div>
-                      <p className="font-semibold">طريقة تعديل بيانات الاتصال</p>
-                      <p className="text-xs text-muted-foreground">3 خطوات بسيطة وآمنة 100%</p>
+                    <p className="text-xs text-muted-foreground truncate" title={c.message}>{c.configured ? c.message || 'متصل' : 'غير مهيأ'}</p>
+                    <div className="flex gap-2 text-[10px] text-muted-foreground" dir="ltr">
+                      {c.status != null && <span>HTTP {c.status}</span>}
+                      {c.latency_ms != null && <span>{c.latency_ms}ms</span>}
                     </div>
-                  </div>
-                  <ol className="text-xs space-y-1.5 text-muted-foreground list-decimal pr-5">
-                    <li>انسخ اسم السر الذي تريد تحديثه من البطاقات أعلاه.</li>
-                    <li>اكتب في دردشة Lovable: <code className="bg-muted px-1.5 py-0.5 rounded" dir="ltr">حدّث سر AZURE_OPENAI_API_KEY</code></li>
-                    <li>سيظهر لك حقل إدخال آمن — الصق القيمة الجديدة واحفظ.</li>
-                  </ol>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              ))}
             </TabsContent>
 
-
-            {/* HEALTH */}
-            <TabsContent value="health" className="space-y-3">
-              <div className="grid gap-3 md:grid-cols-2">
-                {(health?.checks || []).map(c => (
-                  <Card key={c.service}>
-                    <CardContent className="p-4 flex items-start gap-3">
-                      <StatusDot ok={c.ok} configured={c.configured} />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <p className="font-semibold text-sm">{AZURE_HEALTH_LABELS[c.service] || c.service}</p>
-                          {c.latency_ms != null && (
-                            <Badge variant="outline" className="text-[10px]">{c.latency_ms}ms</Badge>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1 truncate" title={c.message}>
-                          {!c.configured ? 'غير مهيأ' : c.ok ? c.message || 'متصل' : `فشل: ${c.message}`}
-                        </p>
-                        {c.status != null && (
-                          <p className="text-[10px] text-muted-foreground mt-0.5" dir="ltr">HTTP {c.status}</p>
-                        )}
+            <TabsContent value="models" className="grid gap-3 md:grid-cols-3">
+              {AZURE_MODELS.map(model => {
+                const test = modelTests[model.id];
+                return (
+                  <Card key={model.id}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between gap-2">
+                        <Cpu className="w-5 h-5" />
+                        {statusBadge(test?.ok, test?.loading)}
                       </div>
-                      {c.configured ? (
-                        c.ok
-                          ? <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                          : <XCircle className="w-4 h-4 text-destructive flex-shrink-0" />
-                      ) : (
-                        <SettingsIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                      )}
+                      <CardTitle className="text-base">{model.label}</CardTitle>
+                      <CardDescription>{model.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex flex-wrap gap-1">
+                        {model.capabilities.map(cap => <Badge key={cap} variant="secondary" className="text-[10px]">{cap}</Badge>)}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground" dir="ltr">
+                        <p>id: {model.id}</p>
+                        {model.apiVersion && <p>api: {model.apiVersion}</p>}
+                        <p>max_tokens: {model.maxTokens}</p>
+                      </div>
+                      {test?.msg && <p className="text-[10px] p-2 rounded bg-muted truncate" dir="ltr" title={test.msg}>{test.msg}</p>}
+                      <Button onClick={() => testModel(model)} disabled={test?.loading} size="sm" variant="outline" className="w-full">
+                        <Send className="w-4 h-4 ml-2" />اختبار
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </TabsContent>
+
+            <TabsContent value="agents" className="space-y-4">
+              <div className="grid gap-3 md:grid-cols-4">
+                {AZURE_AGENTS.map(agent => (
+                  <Card key={agent.id} onClick={() => selectAgent(agent)} className={activeAgent.id === agent.id ? 'border-primary cursor-pointer' : 'cursor-pointer'}>
+                    <CardContent className="p-4 space-y-2">
+                      <Bot className="w-5 h-5" />
+                      <p className="font-semibold text-sm">{agent.label}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-2">{agent.description}</p>
+                      <Badge variant="outline" dir="ltr">{agent.modelId}</Badge>
                     </CardContent>
                   </Card>
                 ))}
-                {!health && (
-                  <Card className="md:col-span-2 p-8 text-center text-sm text-muted-foreground">
-                    <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
-                    جاري الاتصال بخدمات Azure...
-                  </Card>
-                )}
-              </div>
-              <Card className="bg-muted/30">
-                <CardContent className="p-4 text-xs space-y-1 text-muted-foreground">
-                  <p>💡 يتم الفحص مباشرة عبر edge function <code dir="ltr">azure-health</code>.</p>
-                  <p>المتغيرات المطلوبة: <code dir="ltr">AZURE_OPENAI_API_KEY</code>, <code dir="ltr">AZURE_OPENAI_ENDPOINT</code>, <code dir="ltr">AZURE_OPENAI_DEPLOYMENT</code>, <code dir="ltr">ALAZAB_AI_PROD_KEY</code>.</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* MODELS */}
-            <TabsContent value="models" className="space-y-3">
-              <div className="grid gap-3 md:grid-cols-3">
-                {AZURE_MODELS.map(m => {
-                  const t = modelTests[m.id];
-                  return (
-                    <Card key={m.id} className="flex flex-col">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="w-9 h-9 rounded-md bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center">
-                            <Cpu className="w-4 h-4 text-blue-500" />
-                          </div>
-                          {t && (
-                            <Badge variant={t.ok ? 'default' : 'destructive'} className="gap-1 text-[10px]">
-                              {t.loading ? <Loader2 className="w-3 h-3 animate-spin" /> : t.ok ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
-                              {t.latency ? `${t.latency}ms` : ''}
-                            </Badge>
-                          )}
-                        </div>
-                        <CardTitle className="text-base">{m.label}</CardTitle>
-                        <CardDescription className="text-xs leading-relaxed">{m.description}</CardDescription>
-                      </CardHeader>
-                      <CardContent className="flex-1 flex flex-col gap-3">
-                        <div className="flex flex-wrap gap-1">
-                          {m.capabilities.map(cap => (
-                            <Badge key={cap} variant="secondary" className="text-[10px]">{cap}</Badge>
-                          ))}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground space-y-0.5">
-                          <p>درجة حرارة افتراضية: {m.defaultTemperature}</p>
-                          <p>أقصى توكنز: {m.maxTokens.toLocaleString()}</p>
-                        </div>
-                        {t?.msg && (
-                          <p className="text-[10px] p-2 rounded bg-muted truncate" dir="ltr" title={t.msg}>{t.msg}</p>
-                        )}
-                        <Button size="sm" variant="outline" onClick={() => testModel(m)} disabled={t?.loading}>
-                          {t?.loading ? <Loader2 className="w-4 h-4 ml-2 animate-spin" /> : <Send className="w-4 h-4 ml-2" />}
-                          اختبار النموذج
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            </TabsContent>
-
-            {/* AGENTS */}
-            <TabsContent value="agents" className="space-y-4">
-              <div className="grid gap-3 md:grid-cols-4">
-                {AZURE_AGENTS.map(a => {
-                  const active = activeAgent.id === a.id;
-                  return (
-                    <Card
-                      key={a.id}
-                      className={`cursor-pointer transition-all ${active ? 'border-primary ring-2 ring-primary/30' : 'hover:border-primary/50'}`}
-                      onClick={() => selectAgent(a)}
-                    >
-                      <CardContent className="p-4 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-9 h-9 rounded-md flex items-center justify-center ${active ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                            {agentIcons[a.icon]}
-                          </div>
-                          {active && <Badge variant="default" className="text-[10px]">نشط</Badge>}
-                        </div>
-                        <p className="font-semibold text-sm">{a.label}</p>
-                        <p className="text-[11px] text-muted-foreground line-clamp-2">{a.description}</p>
-                        <Badge variant="outline" className="text-[10px]" dir="ltr">{a.modelId}</Badge>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
               </div>
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    {agentIcons[activeAgent.icon]} {activeAgent.label}
-                  </CardTitle>
-                  <CardDescription className="text-xs">{activeAgent.description}</CardDescription>
+                  <CardTitle className="text-base">{activeAgent.label}</CardTitle>
+                  <CardDescription>{activeAgent.description}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="text-xs p-3 bg-muted/50 rounded-md">
-                    <p className="font-semibold mb-1">برومبت النظام (System Prompt):</p>
-                    <p className="text-muted-foreground leading-relaxed">{activeAgent.systemPrompt}</p>
-                  </div>
-                  <Separator />
-                  <div>
-                    <label className="text-xs font-semibold mb-1 block">المهمة:</label>
-                    <Textarea
-                      value={agentPrompt}
-                      onChange={e => setAgentPrompt(e.target.value)}
-                      rows={3}
-                      placeholder="اكتب المهمة المطلوبة من الوكيل..."
-                    />
-                  </div>
+                  <Textarea value={agentPrompt} onChange={e => setAgentPrompt(e.target.value)} rows={3} />
                   <Button onClick={runAgent} disabled={agentLoading} className="w-full">
                     {agentLoading ? <Loader2 className="w-4 h-4 ml-2 animate-spin" /> : <Bot className="w-4 h-4 ml-2" />}
-                    {agentLoading ? 'الوكيل يفكر...' : 'تشغيل الوكيل'}
+                    تشغيل الوكيل
                   </Button>
-                  {agentResponse && (
-                    <div className="p-3 bg-background border rounded-md text-sm whitespace-pre-wrap leading-relaxed max-h-96 overflow-auto">
-                      {agentResponse}
-                    </div>
-                  )}
+                  {agentResponse && <div className="p-3 border rounded-md text-sm whitespace-pre-wrap max-h-96 overflow-auto">{agentResponse}</div>}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="secrets" className="grid gap-3 md:grid-cols-2">
+              {secretNames.map(name => (
+                <Card key={name}>
+                  <CardContent className="p-4">
+                    <code className="text-xs" dir="ltr">{name}</code>
+                  </CardContent>
+                </Card>
+              ))}
             </TabsContent>
           </Tabs>
         </div>
