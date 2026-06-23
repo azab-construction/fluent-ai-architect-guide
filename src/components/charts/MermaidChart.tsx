@@ -7,7 +7,7 @@ import { AlertCircle } from 'lucide-react';
 mermaid.initialize({
   startOnLoad: false,
   theme: 'default',
-  securityLevel: 'loose',
+  securityLevel: 'strict',
   fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
   flowchart: { htmlLabels: true, useMaxWidth: true },
   gantt: { useMaxWidth: true },
