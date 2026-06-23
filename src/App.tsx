@@ -9,6 +9,7 @@ import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import WhatsApp from "./pages/WhatsApp";
 import Azure from "./pages/Azure";
+import AzureSettings from "./pages/AzureSettings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import VisionOCR from "./pages/services/VisionOCR";
@@ -42,6 +43,7 @@ const App = () => (
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/whatsapp" element={<ProtectedRoute><WhatsApp /></ProtectedRoute>} />
           <Route path="/azure" element={<ProtectedRoute><Azure /></ProtectedRoute>} />
+          <Route path="/azure/settings" element={<ProtectedRoute><AzureSettings /></ProtectedRoute>} />
           <Route path="/services/vision" element={<ProtectedRoute><VisionOCR /></ProtectedRoute>} />
           <Route path="/services/docint" element={<ProtectedRoute><DocumentIntelligence /></ProtectedRoute>} />
           <Route path="/services/ai-processing" element={<ProtectedRoute><AIProcessing /></ProtectedRoute>} />
