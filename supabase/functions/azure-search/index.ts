@@ -1,5 +1,6 @@
 // Azure Cognitive Search via APIM
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { buildApimUrl, requireApimSubscriptionKey } from '../_shared/azure-config.ts';
 import { startLog, markRunning, finishLog } from '../_shared/usage-log.ts';
 
 const corsHeaders = {
@@ -8,7 +9,6 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-const APIM_BASE = 'https://azabai.azure-api.net';
 const API_VER = '2024-07-01';
 
 Deno.serve(async (req) => {
@@ -29,8 +29,7 @@ Deno.serve(async (req) => {
     if (error || !claims?.claims) return json({ error: 'Unauthorized' }, 401);
     const userId = claims.claims.sub as string;
 
-    const apimKey = Deno.env.get('ALAZAB_AI_PROD_KEY');
-    if (!apimKey) return json({ error: 'ALAZAB_AI_PROD_KEY not configured' }, 500);
+    const apimKey = requireApimSubscriptionKey();
 
     const body = await req.json() as {
       index: string;
@@ -41,32 +40,34 @@ Deno.serve(async (req) => {
     };
     if (!body.index || !body.query) return json({ error: 'index and query required' }, 400);
 
-    // Allowlist of permitted indexes (extend as needed)
-    const ALLOWED_INDEXES = (Deno.env.get('AZURE_SEARCH_ALLOWED_INDEXES') || 'maintenance,docs,knowledge').split(',').map(s => s.trim());
+    const ALLOWED_INDEXES = (Deno.env.get('AZURE_SEARCH_ALLOWED_INDEXES') || 'maintenance,docs,knowledge')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
     if (!ALLOWED_INDEXES.includes(body.index)) {
       return json({ error: 'Invalid index' }, 400);
     }
-    // Validate query length
     if (typeof body.query !== 'string' || body.query.length > 500) {
       return json({ error: 'Invalid query' }, 400);
     }
-    // Validate top
+
     const top = Math.min(Math.max(1, Number(body.top) || 5), 50);
 
-    // Validate filter: only safe characters (alphanumerics, spaces, basic operators, quotes)
     let safeFilter: string | undefined;
     if (body.filter) {
-      if (typeof body.filter !== 'string' || body.filter.length > 300 || !/^[\w\s'.,=<>!&|()\-/]+$/.test(body.filter)) {
-        return json({ error: 'Invalid filter' }, 400);
-      }
+      const isSafeFilter = typeof body.filter === 'string'
+        && body.filter.length <= 300
+        && /^[A-Za-z0-9_\s'.,=<>!&|()/-]+$/.test(body.filter);
+      if (!isSafeFilter) return json({ error: 'Invalid filter' }, 400);
       safeFilter = body.filter;
     }
-    // Validate select: comma-separated field names only
+
     let safeSelect: string | undefined;
     if (body.select) {
-      if (typeof body.select !== 'string' || body.select.length > 300 || !/^[\w,\s]+$/.test(body.select)) {
-        return json({ error: 'Invalid select' }, 400);
-      }
+      const isSafeSelect = typeof body.select === 'string'
+        && body.select.length <= 300
+        && /^[A-Za-z0-9_,\s]+$/.test(body.select);
+      if (!isSafeSelect) return json({ error: 'Invalid select' }, 400);
       safeSelect = body.select;
     }
 
@@ -74,7 +75,7 @@ Deno.serve(async (req) => {
     logId = started.id; startedAt = started.startedAt;
     await markRunning(logId);
 
-    const url = `${APIM_BASE}/azab-cognitivesearch/indexes/${encodeURIComponent(body.index)}/docs/search?api-version=${API_VER}`;
+    const url = buildApimUrl(`/azab-cognitivesearch/indexes/${encodeURIComponent(body.index)}/docs/search?api-version=${API_VER}`);
     const payload: Record<string, unknown> = {
       search: body.query,
       top,
