@@ -10,6 +10,7 @@ import Settings from "./pages/Settings";
 import WhatsApp from "./pages/WhatsApp";
 import Azure from "./pages/Azure";
 import AzureSettings from "./pages/AzureSettings";
+import AzureContextPage from "./pages/azure/AzureContextPage";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import VisionOCR from "./pages/services/VisionOCR";
@@ -22,6 +23,7 @@ import EngineeringTools from "./pages/EngineeringTools";
 import ProductivityTools from "./pages/ProductivityTools";
 import ArchitectureAnalysis from "./pages/ArchitectureAnalysis";
 import FinanceAnalysis from "./pages/FinanceAnalysis";
+import FinanceModule from "./pages/finance/FinanceModule";
 import ContractsGenerator from "./pages/tools/ContractsGenerator";
 import SmartReports from "./pages/tools/SmartReports";
 import TaskBoard from "./pages/tools/TaskBoard";
@@ -44,6 +46,11 @@ const App = () => (
           <Route path="/whatsapp" element={<ProtectedRoute><WhatsApp /></ProtectedRoute>} />
           <Route path="/azure" element={<ProtectedRoute><Azure /></ProtectedRoute>} />
           <Route path="/azure/settings" element={<ProtectedRoute><AzureSettings /></ProtectedRoute>} />
+          <Route path="/azure/vision" element={<ProtectedRoute><AzureContextPage contextId="vision" /></ProtectedRoute>} />
+          <Route path="/azure/finance" element={<ProtectedRoute><AzureContextPage contextId="finance" /></ProtectedRoute>} />
+          <Route path="/azure/agents/maintenance" element={<ProtectedRoute><AzureContextPage contextId="maintenance-agent" /></ProtectedRoute>} />
+          <Route path="/azure/agents/production" element={<ProtectedRoute><AzureContextPage contextId="production-agent" /></ProtectedRoute>} />
+          <Route path="/azure/speech" element={<ProtectedRoute><AzureContextPage contextId="speech-voice" /></ProtectedRoute>} />
           <Route path="/services/vision" element={<ProtectedRoute><VisionOCR /></ProtectedRoute>} />
           <Route path="/services/docint" element={<ProtectedRoute><DocumentIntelligence /></ProtectedRoute>} />
           <Route path="/services/ai-processing" element={<ProtectedRoute><AIProcessing /></ProtectedRoute>} />
@@ -54,6 +61,7 @@ const App = () => (
           <Route path="/productivity" element={<ProtectedRoute><ProductivityTools /></ProtectedRoute>} />
           <Route path="/architecture" element={<ProtectedRoute><ArchitectureAnalysis /></ProtectedRoute>} />
           <Route path="/finance" element={<ProtectedRoute><FinanceAnalysis /></ProtectedRoute>} />
+          <Route path="/finance/module" element={<ProtectedRoute><FinanceModule /></ProtectedRoute>} />
           <Route path="/tools/contracts" element={<ProtectedRoute><ContractsGenerator /></ProtectedRoute>} />
           <Route path="/tools/reports" element={<ProtectedRoute><SmartReports /></ProtectedRoute>} />
           <Route path="/tools/tasks" element={<ProtectedRoute><TaskBoard /></ProtectedRoute>} />
