@@ -1,5 +1,6 @@
 // Azure AI Vision via APIM — OCR (Read) + image analysis
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { buildApimUrl, requireApimSubscriptionKey } from '../_shared/azure-config.ts';
 import { startLog, markRunning, finishLog } from '../_shared/usage-log.ts';
 
 const corsHeaders = {
@@ -7,8 +8,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
-
-const APIM_BASE = 'https://azabai.azure-api.net';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
@@ -28,8 +27,7 @@ Deno.serve(async (req) => {
     if (error || !claims?.claims) return json({ error: 'Unauthorized' }, 401);
     const userId = claims.claims.sub as string;
 
-    const apimKey = Deno.env.get('ALAZAB_AI_PROD_KEY');
-    if (!apimKey) return json({ error: 'ALAZAB_AI_PROD_KEY not configured' }, 500);
+    const apimKey = requireApimSubscriptionKey();
 
     const body = await req.json() as {
       imageUrl?: string;
@@ -64,7 +62,7 @@ Deno.serve(async (req) => {
     logId = started.id; startedAt = started.startedAt;
     await markRunning(logId);
 
-    const url = `${APIM_BASE}/azab-vision/computervision/imageanalysis:analyze?api-version=2024-02-01&features=${encodeURIComponent(features)}`;
+    const url = buildApimUrl(`/azab-vision/computervision/imageanalysis:analyze?api-version=2024-02-01&features=${encodeURIComponent(features)}`);
 
     let upstream: Response;
     if (body.imageUrl) {

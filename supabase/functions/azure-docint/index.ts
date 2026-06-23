@@ -1,5 +1,6 @@
 // Azure Document Intelligence via APIM — prebuilt-read / prebuilt-layout
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { buildApimUrl, requireApimSubscriptionKey } from '../_shared/azure-config.ts';
 import { startLog, markRunning, finishLog } from '../_shared/usage-log.ts';
 
 const corsHeaders = {
@@ -8,7 +9,6 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-const APIM_BASE = 'https://azabai.azure-api.net';
 const API_VER = '2024-11-30';
 
 Deno.serve(async (req) => {
@@ -29,8 +29,7 @@ Deno.serve(async (req) => {
     if (error || !claims?.claims) return json({ error: 'Unauthorized' }, 401);
     const userId = claims.claims.sub as string;
 
-    const apimKey = Deno.env.get('ALAZAB_AI_PROD_KEY');
-    if (!apimKey) return json({ error: 'ALAZAB_AI_PROD_KEY not configured' }, 500);
+    const apimKey = requireApimSubscriptionKey();
 
     const body = await req.json() as {
       fileUrl?: string;
@@ -61,7 +60,7 @@ Deno.serve(async (req) => {
     const started = await startLog({ userId, operation: 'docint', model: `azab-docint:${model}` });
     logId = started.id; startedAt = started.startedAt;
 
-    const analyzeUrl = `${APIM_BASE}/azab-docint/documentintelligence/documentModels/${model}:analyze?api-version=${API_VER}`;
+    const analyzeUrl = buildApimUrl(`/azab-docint/documentintelligence/documentModels/${model}:analyze?api-version=${API_VER}`);
 
     let submit: Response;
     if (body.fileUrl) {

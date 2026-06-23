@@ -1,5 +1,7 @@
-// Quick health-check for Azure services: pings each configured endpoint and
-// returns latency + ok status. No auth required (read-only diagnostics).
+// Admin-only health-check for Azure services: pings configured endpoints and returns latency + status.
+import { createClient } from 'npm:@supabase/supabase-js@2';
+import { buildApimUrl, getApimSubscriptionKey, readAzureOpenAIConfig, buildAzureOpenAIChatUrl } from '../_shared/azure-config.ts';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -26,18 +28,37 @@ async function timed<T>(fn: () => Promise<T>): Promise<{ value?: T; error?: unkn
   }
 }
 
+async function authorizeAdmin(req: Request): Promise<Response | null> {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) return json({ error: 'Unauthorized' }, 401);
+
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_ANON_KEY')!,
+    { global: { headers: { Authorization: authHeader } } },
+  );
+  const token = authHeader.replace('Bearer ', '');
+  const { data: claims, error: claimErr } = await supabase.auth.getClaims(token);
+  if (claimErr || !claims?.claims) return json({ error: 'Unauthorized' }, 401);
+
+  const userId = claims.claims.sub as string;
+  const { data: isAdmin, error: roleErr } = await supabase.rpc('has_role', { _user_id: userId, _role: 'admin' });
+  if (roleErr || !isAdmin) return json({ error: 'Forbidden' }, 403);
+
+  return null;
+}
+
 async function checkAzureOpenAI(): Promise<Check> {
-  const apiKey = Deno.env.get('AZURE_OPENAI_API_KEY');
-  const endpoint = Deno.env.get('AZURE_OPENAI_ENDPOINT');
-  const deployment = Deno.env.get('AZURE_OPENAI_DEPLOYMENT');
-  const apiVersion = Deno.env.get('AZURE_OPENAI_API_VERSION') || '2024-08-01-preview';
-  if (!apiKey || !endpoint || !deployment) {
-    return { service: 'azure-openai', configured: false, ok: false, message: 'الإعدادات غير مكتملة' };
+  const resolved = readAzureOpenAIConfig();
+  if (!resolved.configured || !resolved.config) {
+    return { service: 'azure-openai', configured: false, ok: false, message: `Missing: ${resolved.missing.join(', ')}` };
   }
-  const url = `${endpoint.replace(/\/$/, '')}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
+
+  const config = resolved.config;
+  const url = buildAzureOpenAIChatUrl(config);
   const { value, error, ms } = await timed(() => fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'api-key': apiKey },
+    headers: { 'Content-Type': 'application/json', 'api-key': config.apiKey },
     body: JSON.stringify({
       messages: [{ role: 'user', content: 'ping' }],
       max_tokens: 1,
@@ -47,7 +68,7 @@ async function checkAzureOpenAI(): Promise<Check> {
   if (error) return { service: 'azure-openai', configured: true, ok: false, latency_ms: ms, message: String(error) };
   const res = value!;
   let bodyText = '';
-  try { bodyText = await res.text(); } catch { /* */ }
+  try { bodyText = await res.text(); } catch { /* ignore */ }
   return {
     service: 'azure-openai',
     configured: true,
@@ -55,24 +76,22 @@ async function checkAzureOpenAI(): Promise<Check> {
     status: res.status,
     latency_ms: ms,
     message: res.ok ? 'الاتصال نشط' : bodyText.slice(0, 200),
-    details: { deployment, apiVersion },
+    details: { deployment: config.deployment, apiVersion: config.apiVersion },
   };
 }
 
 async function checkApim(service: string, path: string): Promise<Check> {
-  const apimKey = Deno.env.get('ALAZAB_AI_PROD_KEY');
+  const apimKey = getApimSubscriptionKey();
   if (!apimKey) {
-    return { service, configured: false, ok: false, message: 'ALAZAB_AI_PROD_KEY غير مهيأ' };
+    return { service, configured: false, ok: false, message: 'AZURE_APIM_SUBSCRIPTION_KEY غير مهيأ' };
   }
-  // Health probe via OPTIONS to APIM gateway (lightweight, returns 200/204 when reachable)
-  const url = `https://alazab-ai-prod.azure-api.net${path}`;
+  const url = buildApimUrl(path);
   const { value, error, ms } = await timed(() => fetch(url, {
     method: 'OPTIONS',
     headers: { 'Ocp-Apim-Subscription-Key': apimKey },
   }));
   if (error) return { service, configured: true, ok: false, latency_ms: ms, message: String(error) };
   const res = value!;
-  // APIM returns 200/204 on OPTIONS even without policy match; treat <500 as reachable
   return {
     service,
     configured: true,
@@ -86,6 +105,9 @@ async function checkApim(service: string, path: string): Promise<Check> {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   try {
+    const authError = await authorizeAdmin(req);
+    if (authError) return authError;
+
     const [openai, docint, vision, search] = await Promise.all([
       checkAzureOpenAI(),
       checkApim('document-intelligence', '/docint/'),
@@ -98,13 +120,15 @@ Deno.serve(async (req) => {
       ok: checks.filter(c => c.ok).length,
       configured: checks.filter(c => c.configured).length,
     };
-    return new Response(JSON.stringify({ checks, summary, timestamp: new Date().toISOString() }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return json({ checks, summary, timestamp: new Date().toISOString() });
   } catch (e) {
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'unknown' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return json({ error: e instanceof Error ? e.message : 'unknown' }, 500);
   }
 });
+
+function json(obj: unknown, status = 200) {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
