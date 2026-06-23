@@ -1,1 +1,19 @@
 project_id = "ufpodaidblajzjsczlvo"
+
+[functions.azure-health]
+verify_jwt = true
+
+[functions.azure-ai-chat]
+verify_jwt = true
+
+[functions.finance-analyze]
+verify_jwt = true
+
+[functions.azure-vision]
+verify_jwt = true
+
+[functions.azure-docint]
+verify_jwt = true
+
+[functions.azure-search]
+verify_jwt = true
