@@ -35,6 +35,11 @@ const NAV_ITEMS = [
 ];
 
 const SERVICE_ITEMS = [
+  { to: '/azure/vision', icon: Eye, label: 'Vision · GPT-5.5' },
+  { to: '/azure/finance', icon: Wallet, label: 'Finance · GPT-5.1' },
+  { to: '/azure/agents/maintenance', icon: Hammer, label: 'Maintenance Agent' },
+  { to: '/azure/agents/production', icon: Bot, label: 'Production Agent' },
+  { to: '/azure/speech', icon: Phone, label: 'Speech Voice Live' },
   { to: '/services/vision', icon: Eye, label: 'Vision / OCR' },
   { to: '/services/docint', icon: FileSearch, label: 'Document Intelligence' },
   { to: '/services/ai-processing', icon: Wand2, label: 'AI Processing' },
