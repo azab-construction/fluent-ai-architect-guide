@@ -10,6 +10,7 @@ import Settings from "./pages/Settings";
 import WhatsApp from "./pages/WhatsApp";
 import Azure from "./pages/Azure";
 import AzureSettings from "./pages/AzureSettings";
+import AzureContextPage from "./pages/azure/AzureContextPage";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import VisionOCR from "./pages/services/VisionOCR";
@@ -44,6 +45,11 @@ const App = () => (
           <Route path="/whatsapp" element={<ProtectedRoute><WhatsApp /></ProtectedRoute>} />
           <Route path="/azure" element={<ProtectedRoute><Azure /></ProtectedRoute>} />
           <Route path="/azure/settings" element={<ProtectedRoute><AzureSettings /></ProtectedRoute>} />
+          <Route path="/azure/vision" element={<ProtectedRoute><AzureContextPage contextId="vision" /></ProtectedRoute>} />
+          <Route path="/azure/finance" element={<ProtectedRoute><AzureContextPage contextId="finance" /></ProtectedRoute>} />
+          <Route path="/azure/agents/maintenance" element={<ProtectedRoute><AzureContextPage contextId="maintenance-agent" /></ProtectedRoute>} />
+          <Route path="/azure/agents/production" element={<ProtectedRoute><AzureContextPage contextId="production-agent" /></ProtectedRoute>} />
+          <Route path="/azure/speech" element={<ProtectedRoute><AzureContextPage contextId="speech-voice" /></ProtectedRoute>} />
           <Route path="/services/vision" element={<ProtectedRoute><VisionOCR /></ProtectedRoute>} />
           <Route path="/services/docint" element={<ProtectedRoute><DocumentIntelligence /></ProtectedRoute>} />
           <Route path="/services/ai-processing" element={<ProtectedRoute><AIProcessing /></ProtectedRoute>} />
