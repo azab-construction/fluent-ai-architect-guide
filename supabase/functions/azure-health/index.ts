@@ -1,4 +1,5 @@
-// Health-check for Azure services: pings configured endpoints and returns latency + status.
+// Admin-only health-check for Azure services: pings configured endpoints and returns latency + status.
+import { createClient } from 'npm:@supabase/supabase-js@2';
 import { buildApimUrl, getApimSubscriptionKey, readAzureOpenAIConfig, buildAzureOpenAIChatUrl } from '../_shared/azure-config.ts';
 
 const corsHeaders = {
@@ -25,6 +26,26 @@ async function timed<T>(fn: () => Promise<T>): Promise<{ value?: T; error?: unkn
   } catch (error) {
     return { error, ms: Date.now() - t };
   }
+}
+
+async function authorizeAdmin(req: Request): Promise<Response | null> {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) return json({ error: 'Unauthorized' }, 401);
+
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_ANON_KEY')!,
+    { global: { headers: { Authorization: authHeader } } },
+  );
+  const token = authHeader.replace('Bearer ', '');
+  const { data: claims, error: claimErr } = await supabase.auth.getClaims(token);
+  if (claimErr || !claims?.claims) return json({ error: 'Unauthorized' }, 401);
+
+  const userId = claims.claims.sub as string;
+  const { data: isAdmin, error: roleErr } = await supabase.rpc('has_role', { _user_id: userId, _role: 'admin' });
+  if (roleErr || !isAdmin) return json({ error: 'Forbidden' }, 403);
+
+  return null;
 }
 
 async function checkAzureOpenAI(): Promise<Check> {
@@ -84,6 +105,9 @@ async function checkApim(service: string, path: string): Promise<Check> {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   try {
+    const authError = await authorizeAdmin(req);
+    if (authError) return authError;
+
     const [openai, docint, vision, search] = await Promise.all([
       checkAzureOpenAI(),
       checkApim('document-intelligence', '/docint/'),
