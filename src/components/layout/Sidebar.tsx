@@ -30,6 +30,7 @@ const NAV_ITEMS = [
   { to: '/engineering', icon: Box, label: 'الأدوات الهندسية' },
   { to: '/whatsapp', icon: Phone, label: 'واتساب الأعمال' },
   { to: '/azure', icon: Cloud, label: 'أدوات Azure' },
+  { to: '/azure/settings', icon: Bot, label: 'نماذج ووكلاء Azure' },
   { to: '/analytics', icon: BarChart3, label: 'التحليلات' },
 ];
 
