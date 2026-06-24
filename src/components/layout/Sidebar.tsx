@@ -174,8 +174,17 @@ export const Sidebar = (): JSX.Element => {
                   }
                 `}
               >
-                <Plus className="w-3.5 h-3.5" />
-              </Button>
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                <span className="flex-1 truncate">{label}</span>
+                {badge && <Badge variant="secondary" className="text-[10px] h-4 px-1">{badge}</Badge>}
+              </Link>
+            ))}
+          </div>
+
+          {/* Sessions */}
+          <div className="px-3 flex-1 overflow-y-auto">
+            <div className="flex items-center justify-between px-2 pb-1">
+              <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">المحادثات</span>
             </div>
             <div className="px-2 pb-1.5">
               <div className="relative">
