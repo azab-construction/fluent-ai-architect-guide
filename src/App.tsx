@@ -11,6 +11,7 @@ import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import WhatsApp from "./pages/WhatsApp";
 import Azure from "./pages/Azure";
+import AzureSettings from "./pages/AzureSettings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import VisionOCR from "./pages/services/VisionOCR";
@@ -20,6 +21,12 @@ import MaintenanceSearch from "./pages/services/MaintenanceSearch";
 import QAAgent from "./pages/services/QAAgent";
 import ArchERP from "./pages/services/ArchERP";
 import EngineeringTools from "./pages/EngineeringTools";
+import ProductivityTools from "./pages/ProductivityTools";
+import ArchitectureAnalysis from "./pages/ArchitectureAnalysis";
+import FinanceAnalysis from "./pages/FinanceAnalysis";
+import ContractsGenerator from "./pages/tools/ContractsGenerator";
+import SmartReports from "./pages/tools/SmartReports";
+import TaskBoard from "./pages/tools/TaskBoard";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -40,6 +47,7 @@ const App = () => (
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/whatsapp" element={<ProtectedRoute><WhatsApp /></ProtectedRoute>} />
           <Route path="/azure" element={<ProtectedRoute><Azure /></ProtectedRoute>} />
+          <Route path="/azure/settings" element={<ProtectedRoute><AzureSettings /></ProtectedRoute>} />
           <Route path="/services/vision" element={<ProtectedRoute><VisionOCR /></ProtectedRoute>} />
           <Route path="/services/docint" element={<ProtectedRoute><DocumentIntelligence /></ProtectedRoute>} />
           <Route path="/services/ai-processing" element={<ProtectedRoute><AIProcessing /></ProtectedRoute>} />
@@ -47,6 +55,12 @@ const App = () => (
           <Route path="/services/agent" element={<ProtectedRoute><QAAgent /></ProtectedRoute>} />
           <Route path="/services/arch-erp" element={<ProtectedRoute><ArchERP /></ProtectedRoute>} />
           <Route path="/engineering" element={<ProtectedRoute><EngineeringTools /></ProtectedRoute>} />
+          <Route path="/productivity" element={<ProtectedRoute><ProductivityTools /></ProtectedRoute>} />
+          <Route path="/architecture" element={<ProtectedRoute><ArchitectureAnalysis /></ProtectedRoute>} />
+          <Route path="/finance" element={<ProtectedRoute><FinanceAnalysis /></ProtectedRoute>} />
+          <Route path="/tools/contracts" element={<ProtectedRoute><ContractsGenerator /></ProtectedRoute>} />
+          <Route path="/tools/reports" element={<ProtectedRoute><SmartReports /></ProtectedRoute>} />
+          <Route path="/tools/tasks" element={<ProtectedRoute><TaskBoard /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

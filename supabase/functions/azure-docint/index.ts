@@ -1,5 +1,6 @@
 // Azure Document Intelligence via APIM — prebuilt-read / prebuilt-layout
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { buildApimUrl, requireApimSubscriptionKey } from '../_shared/azure-config.ts';
 import { startLog, markRunning, finishLog } from '../_shared/usage-log.ts';
 
 const corsHeaders = {
@@ -8,7 +9,6 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-const APIM_BASE = 'https://azabai.azure-api.net';
 const API_VER = '2024-11-30';
 
 Deno.serve(async (req) => {
@@ -29,21 +29,38 @@ Deno.serve(async (req) => {
     if (error || !claims?.claims) return json({ error: 'Unauthorized' }, 401);
     const userId = claims.claims.sub as string;
 
-    const apimKey = Deno.env.get('ALAZAB_AI_PROD_KEY');
-    if (!apimKey) return json({ error: 'ALAZAB_AI_PROD_KEY not configured' }, 500);
+    const apimKey = requireApimSubscriptionKey();
 
     const body = await req.json() as {
       fileUrl?: string;
       fileBase64?: string;
-      model?: 'prebuilt-read' | 'prebuilt-layout' | 'prebuilt-document';
+      model?: string;
     };
     if (!body.fileUrl && !body.fileBase64) return json({ error: 'fileUrl or fileBase64 required' }, 400);
 
-    const model = body.model || 'prebuilt-read';
+    // Server-side allowlist for model
+    const ALLOWED_MODELS = ['prebuilt-read', 'prebuilt-layout', 'prebuilt-document'];
+    const model = ALLOWED_MODELS.includes(body.model || '') ? body.model! : 'prebuilt-read';
+
+    // Validate fileUrl: must be https
+    if (body.fileUrl) {
+      try {
+        const u = new URL(body.fileUrl);
+        if (u.protocol !== 'https:') return json({ error: 'fileUrl must be https' }, 400);
+        // Block private/local hosts
+        const host = u.hostname.toLowerCase();
+        if (/^(localhost|127\.|10\.|192\.168\.|169\.254\.|::1)/.test(host) || host.endsWith('.internal') || host.endsWith('.local')) {
+          return json({ error: 'fileUrl host not allowed' }, 400);
+        }
+      } catch {
+        return json({ error: 'Invalid fileUrl' }, 400);
+      }
+    }
+
     const started = await startLog({ userId, operation: 'docint', model: `azab-docint:${model}` });
     logId = started.id; startedAt = started.startedAt;
 
-    const analyzeUrl = `${APIM_BASE}/azab-docint/documentintelligence/documentModels/${model}:analyze?api-version=${API_VER}`;
+    const analyzeUrl = buildApimUrl(`/azab-docint/documentintelligence/documentModels/${model}:analyze?api-version=${API_VER}`);
 
     let submit: Response;
     if (body.fileUrl) {

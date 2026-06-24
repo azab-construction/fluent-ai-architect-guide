@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-internal-service-role",
 };
 
 serve(async (req) => {
@@ -12,6 +12,7 @@ serve(async (req) => {
   }
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+  const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const DEEPSEEK_API_KEY = Deno.env.get("DEEPSEEK_API_KEY");
 
@@ -22,19 +23,41 @@ serve(async (req) => {
     });
   }
 
+  // Auth: accept either internal service-role header (from webhook) OR a valid user JWT
+  const internalHeader = req.headers.get("x-internal-service-role");
+  const isInternal = internalHeader && internalHeader === SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!isInternal) {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data, error } = await userClient.auth.getClaims(authHeader.replace("Bearer ", ""));
+    if (error || !data?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+  }
+
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   try {
     const { messageId } = await req.json();
-
-    if (!messageId) {
+    if (!messageId || typeof messageId !== "string") {
       return new Response(JSON.stringify({ error: "messageId required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Get the message
     const { data: message, error: fetchError } = await supabase
       .from("whatsapp_messages")
       .select("*")
@@ -49,11 +72,9 @@ serve(async (req) => {
     }
 
     let contentToAnalyze = "";
-
     if (message.text_content) {
       contentToAnalyze = message.text_content;
     } else if (message.media_url && message.media_mime_type?.startsWith("text")) {
-      // Try to fetch text-based media
       try {
         const res = await fetch(message.media_url);
         contentToAnalyze = await res.text();
@@ -64,7 +85,6 @@ serve(async (req) => {
       contentToAnalyze = `[ملف وسائط: ${message.media_filename || message.message_type}]`;
     }
 
-    // Call DeepSeek for analysis
     const aiResponse = await fetch("https://api.deepseek.com/chat/completions", {
       method: "POST",
       headers: {
@@ -96,19 +116,15 @@ serve(async (req) => {
     const aiData = await aiResponse.json();
     const aiText = aiData.choices?.[0]?.message?.content || "فشل التحليل";
 
-    // Parse extracted data
     let extractedData = {};
     try {
       const jsonMatch = aiText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        extractedData = JSON.parse(jsonMatch[0]);
-      }
+      if (jsonMatch) extractedData = JSON.parse(jsonMatch[0]);
     } catch {
       extractedData = { raw_analysis: aiText };
     }
 
-    // Update the message with analysis
-    const { error: updateError } = await supabase
+    await supabase
       .from("whatsapp_messages")
       .update({
         ai_analysis: aiText,
@@ -119,25 +135,15 @@ serve(async (req) => {
       })
       .eq("id", messageId);
 
-    if (updateError) {
-      console.error("Update error:", updateError);
-    }
-
-    return new Response(
-      JSON.stringify({ success: true, analysis: extractedData }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return new Response(JSON.stringify({ success: true, analysis: extractedData }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error("Analysis error:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

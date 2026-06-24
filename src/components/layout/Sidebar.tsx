@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import {
-  MessageSquare, Box, Phone, Cloud, BarChart3,
-  Settings, LogOut, Plus, Trash2, LogIn,
-  Menu, X, ChevronDown
+  MessageSquare, Github, HardDrive, Settings, BarChart3, CheckCircle, AlertCircle,
+  Settings2, Phone, Cloud, Eye, FileSearch, Wand2, Search as SearchIcon, Bot,
+  Hammer, Box, LogOut, Plus, Trash2, Pencil, Check, X, Users, Sparkles, Building2, Wallet,
+  FileText, BarChart3 as BarChartIcon, CheckSquare
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useChatSession, chatSessionStore } from '@/lib/chat-session-store';
@@ -20,11 +21,27 @@ interface ChatSession {
 }
 
 const NAV_ITEMS = [
-  { to: '/', icon: MessageSquare, label: 'الدردشة', badge: null },
-  { to: '/engineering', icon: Box, label: 'الأدوات الهندسية', badge: null },
-  { to: '/whatsapp', icon: Phone, label: 'واتساب', badge: null },
-  { to: '/azure', icon: Cloud, label: 'Azure', badge: null },
-  { to: '/analytics', icon: BarChart3, label: 'التحليلات', badge: null },
+  { to: '/', icon: MessageSquare, label: 'الدردشة' },
+  { to: '/tools/tasks', icon: CheckSquare, label: 'المهام والمشاريع' },
+  { to: '/tools/contracts', icon: FileText, label: 'العقود والمستندات' },
+  { to: '/tools/reports', icon: BarChartIcon, label: 'التقارير الذكية' },
+  { to: '/finance', icon: Wallet, label: 'التحليل المالي' },
+  { to: '/architecture', icon: Building2, label: 'تحليل معماري' },
+  { to: '/productivity', icon: Sparkles, label: 'أدوات الكتابة' },
+  { to: '/engineering', icon: Box, label: 'الأدوات الهندسية' },
+  { to: '/whatsapp', icon: Phone, label: 'واتساب الأعمال' },
+  { to: '/azure', icon: Cloud, label: 'أدوات Azure' },
+  { to: '/azure/settings', icon: Bot, label: 'نماذج ووكلاء Azure' },
+  { to: '/analytics', icon: BarChart3, label: 'التحليلات' },
+];
+
+const SERVICE_ITEMS = [
+  { to: '/services/vision', icon: Eye, label: 'Vision / OCR' },
+  { to: '/services/docint', icon: FileSearch, label: 'Document Intelligence' },
+  { to: '/services/ai-processing', icon: Wand2, label: 'AI Processing' },
+  { to: '/services/search', icon: SearchIcon, label: 'بحث الصيانة' },
+  { to: '/services/agent', icon: Bot, label: 'مساعد RAG' },
+  { to: '/services/arch-erp', icon: Hammer, label: 'Arch ERP' },
 ];
 
 const SETTINGS_ITEMS = [
@@ -39,12 +56,15 @@ export const Sidebar = (): JSX.Element => {
   const { sessionId } = useChatSession();
 
   const [sessions, setSessions] = useState<ChatSession[]>([]);
-  const [isOpen, setIsOpen] = useState(true);
-  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [integrationsStatus, setIntegrationsStatus] = useState<Record<string, string>>({});
+  const [sessionSearch, setSessionSearch] = useState('');
 
   const isChat = pathname === '/';
 
-  const loadSessions = async (): Promise<void> => {
+
+  const loadSessions = async () => {
     if (!user) return;
     setIsLoadingSessions(true);
     try {
@@ -73,20 +93,28 @@ export const Sidebar = (): JSX.Element => {
     navigate('/');
   };
 
-  const deleteSession = async (id: string): Promise<void> => {
-    try {
-      await supabase.from('chat_sessions').delete().eq('id', id);
-      setSessions(sessions.filter(s => s.id !== id));
-      toast({ description: 'تم حذف الجلسة' });
-    } catch (error) {
-      toast({ variant: 'destructive', description: 'خطأ في حذف الجلسة' });
-    }
+  const filteredSessions = sessions.filter(s =>
+    s.title.toLowerCase().includes(sessionSearch.trim().toLowerCase())
+  );
+
+  const NavLink = ({ to, icon: Icon, label }: { to: string; icon: any; label: string }) => {
+    const active = pathname === to;
+    return (
+      <Link
+        to={to}
+        className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors ${
+          active ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+        }`}
+      >
+        <Icon className="w-4 h-4 flex-shrink-0" />
+        <span className="truncate">{label}</span>
+      </Link>
+    );
   };
 
-  const handleLogout = async (): Promise<void> => {
-    await signOut();
-    navigate('/auth');
-  };
+
+  const statusDot = (s?: string) =>
+    s === 'connected' ? 'bg-success' : s === 'error' ? 'bg-destructive' : 'bg-muted-foreground/40';
 
   return (
     <>
@@ -146,59 +174,83 @@ export const Sidebar = (): JSX.Element => {
                   }
                 `}
               >
-                <Icon className="w-5 h-5 flex-shrink-0" />
-                <span className="flex-1">{label}</span>
-                {badge && (
-                  <span className="text-xs px-2 py-1 bg-primary text-primary-foreground rounded-full">
-                    {badge}
-                  </span>
-                )}
-              </Link>
-            ))}
+                <Plus className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+            <div className="px-2 pb-1.5">
+              <div className="relative">
+                <SearchIcon className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+                <Input
+                  value={sessionSearch}
+                  onChange={e => setSessionSearch(e.target.value)}
+                  placeholder="ابحث في المحادثات..."
+                  className="h-7 text-xs pr-7 bg-background"
+                />
+              </div>
+            </div>
+            <div className="space-y-0.5">
+              {filteredSessions.length === 0 && (
+                <p className="text-[11px] text-muted-foreground text-center py-2">
+                  {sessionSearch ? 'لا توجد نتائج' : 'لا توجد محادثات'}
+                </p>
+              )}
+              {filteredSessions.map(s => (
+                <div
+                  key={s.id}
+                  className={`group flex items-center gap-1 px-2 py-1.5 rounded-md text-xs cursor-pointer ${
+                    sessionId === s.id ? 'bg-primary/10 text-primary' : 'hover:bg-accent text-muted-foreground'
+                  }`}
+                  onClick={() => editingId !== s.id && setSession(s.id)}
+                >
+                  <MessageSquare className="w-3 h-3 flex-shrink-0" />
+                  {editingId === s.id ? (
+                    <>
+                      <Input
+                        value={editTitle}
+                        onChange={e => setEditTitle(e.target.value)}
+                        className="h-5 text-xs flex-1"
+                        onClick={e => e.stopPropagation()}
+                        onKeyDown={e => e.key === 'Enter' && handleRename(s.id)}
+                      />
+                      <Button size="icon" variant="ghost" className="h-5 w-5"
+                        onClick={e => { e.stopPropagation(); handleRename(s.id); }}>
+                        <Check className="w-3 h-3" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-5 w-5"
+                        onClick={e => { e.stopPropagation(); setEditingId(null); }}>
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="flex-1 truncate" dir="auto">{s.title}</span>
+                      <Button size="icon" variant="ghost" className="h-5 w-5 opacity-0 group-hover:opacity-100"
+                        onClick={e => { e.stopPropagation(); setEditingId(s.id); setEditTitle(s.title); }}>
+                        <Pencil className="w-2.5 h-2.5" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-5 w-5 opacity-0 group-hover:opacity-100 text-destructive"
+                        onClick={e => { e.stopPropagation(); handleDelete(s.id); }}>
+                        <Trash2 className="w-2.5 h-2.5" />
+                      </Button>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Sessions */}
-          {isChat && sessions.length > 0 && (
-            <div className="px-3 mb-6 border-t border-sidebar-border pt-4">
-              <p className="text-xs font-semibold text-sidebar-foreground mb-3 px-2 uppercase opacity-70">
-                جلساتك الأخيرة
-              </p>
-              <ScrollArea className="h-40">
-                <div className="space-y-1 pr-4">
-                  {sessions.map((session) => (
-                    <div
-                      key={session.id}
-                      className={`
-                        flex items-center gap-2 px-3 py-2 rounded-lg group text-sm
-                        ${sessionId === session.id
-                          ? 'bg-sidebar-accent text-sidebar-primary'
-                          : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
-                        }
-                      `}
-                    >
-                      <MessageSquare className="w-4 h-4 flex-shrink-0" />
-                      <Link
-                        to={`/?session=${session.id}`}
-                        className="flex-1 truncate"
-                      >
-                        {session.title}
-                      </Link>
-                      <button
-                        onClick={() => deleteSession(session.id)}
-                        className="
-                          opacity-0 group-hover:opacity-100 transition-opacity
-                          p-1 hover:bg-destructive/20 rounded
-                        "
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </div>
-          )}
-        </nav>
+
+        <Accordion type="multiple" defaultValue={['services']} className="px-2">
+          <AccordionItem value="services" className="border-0">
+            <AccordionTrigger className="py-2 px-2 text-[11px] uppercase tracking-wider text-muted-foreground font-medium hover:no-underline">
+              خدمات Azure
+            </AccordionTrigger>
+            <AccordionContent className="pb-2">
+              <div className="space-y-0.5">
+                {SERVICE_ITEMS.map(item => <NavLink key={item.to} {...item} />)}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
 
         {/* Bottom Section */}
         <div className="border-t border-sidebar-border p-4 space-y-3">

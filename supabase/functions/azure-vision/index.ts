@@ -1,5 +1,6 @@
 // Azure AI Vision via APIM — OCR (Read) + image analysis
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { buildApimUrl, requireApimSubscriptionKey } from '../_shared/azure-config.ts';
 import { startLog, markRunning, finishLog } from '../_shared/usage-log.ts';
 
 const corsHeaders = {
@@ -7,8 +8,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
-
-const APIM_BASE = 'https://azabai.azure-api.net';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
@@ -28,8 +27,7 @@ Deno.serve(async (req) => {
     if (error || !claims?.claims) return json({ error: 'Unauthorized' }, 401);
     const userId = claims.claims.sub as string;
 
-    const apimKey = Deno.env.get('ALAZAB_AI_PROD_KEY');
-    if (!apimKey) return json({ error: 'ALAZAB_AI_PROD_KEY not configured' }, 500);
+    const apimKey = requireApimSubscriptionKey();
 
     const body = await req.json() as {
       imageUrl?: string;
@@ -38,12 +36,33 @@ Deno.serve(async (req) => {
     };
     if (!body.imageUrl && !body.imageBase64) return json({ error: 'imageUrl or imageBase64 required' }, 400);
 
-    const features = body.features || 'read';
+    // Validate imageUrl: https only, block private/local hosts
+    if (body.imageUrl) {
+      try {
+        const u = new URL(body.imageUrl);
+        if (u.protocol !== 'https:') return json({ error: 'imageUrl must be https' }, 400);
+        const host = u.hostname.toLowerCase();
+        if (/^(localhost|127\.|10\.|192\.168\.|169\.254\.|::1)/.test(host) || host.endsWith('.internal') || host.endsWith('.local')) {
+          return json({ error: 'imageUrl host not allowed' }, 400);
+        }
+      } catch {
+        return json({ error: 'Invalid imageUrl' }, 400);
+      }
+    }
+
+    // Validate features: allowlist
+    const ALLOWED_FEATURES = new Set(['read', 'caption', 'denseCaptions', 'tags', 'objects', 'smartCrops', 'people']);
+    const requestedFeatures = (body.features || 'read').split(',').map(s => s.trim()).filter(Boolean);
+    if (requestedFeatures.some(f => !ALLOWED_FEATURES.has(f))) {
+      return json({ error: 'Invalid features' }, 400);
+    }
+    const features = requestedFeatures.join(',');
+
     const started = await startLog({ userId, operation: 'vision', model: `azab-vision:${features}` });
     logId = started.id; startedAt = started.startedAt;
     await markRunning(logId);
 
-    const url = `${APIM_BASE}/azab-vision/computervision/imageanalysis:analyze?api-version=2024-02-01&features=${encodeURIComponent(features)}`;
+    const url = buildApimUrl(`/azab-vision/computervision/imageanalysis:analyze?api-version=2024-02-01&features=${encodeURIComponent(features)}`);
 
     let upstream: Response;
     if (body.imageUrl) {
