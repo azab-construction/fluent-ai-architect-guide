@@ -260,6 +260,10 @@ export const Sidebar = (): JSX.Element => {
               </div>
             </AccordionContent>
           </AccordionItem>
+        </Accordion>
+        </nav>
+
+
 
         {/* Bottom Section */}
         <div className="border-t border-sidebar-border p-4 space-y-3">
