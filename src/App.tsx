@@ -32,6 +32,8 @@ import TaskBoard from "./pages/tools/TaskBoard";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
+const UserOnly = ({ children }: { children: React.ReactNode }) => <ProtectedRoute>{children}</ProtectedRoute>;
+const AdminOnly = ({ children }: { children: React.ReactNode }) => <ProtectedRoute requireAdmin>{children}</ProtectedRoute>;
 
 const App = () => (
   <ErrorBoundary>
@@ -41,38 +43,38 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-          <Routes>
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-          <Route path="/integrations" element={<ProtectedRoute><Integrations /></ProtectedRoute>} />
-          <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-          <Route path="/whatsapp" element={<ProtectedRoute><WhatsApp /></ProtectedRoute>} />
-          <Route path="/azure" element={<ProtectedRoute><Azure /></ProtectedRoute>} />
-          <Route path="/azure/settings" element={<ProtectedRoute><AzureSettings /></ProtectedRoute>} />
-          <Route path="/azure/vision" element={<ProtectedRoute><AzureContextPage contextId="vision" /></ProtectedRoute>} />
-          <Route path="/azure/finance" element={<ProtectedRoute><AzureContextPage contextId="finance" /></ProtectedRoute>} />
-          <Route path="/azure/agents/maintenance" element={<ProtectedRoute><AzureContextPage contextId="maintenance-agent" /></ProtectedRoute>} />
-          <Route path="/azure/agents/production" element={<ProtectedRoute><AzureContextPage contextId="production-agent" /></ProtectedRoute>} />
-          <Route path="/azure/speech" element={<ProtectedRoute><AzureContextPage contextId="speech-voice" /></ProtectedRoute>} />
-          <Route path="/services/vision" element={<ProtectedRoute><VisionOCR /></ProtectedRoute>} />
-          <Route path="/services/docint" element={<ProtectedRoute><DocumentIntelligence /></ProtectedRoute>} />
-          <Route path="/services/ai-processing" element={<ProtectedRoute><AIProcessing /></ProtectedRoute>} />
-          <Route path="/services/search" element={<ProtectedRoute><MaintenanceSearch /></ProtectedRoute>} />
-          <Route path="/services/agent" element={<ProtectedRoute><QAAgent /></ProtectedRoute>} />
-          <Route path="/services/arch-erp" element={<ProtectedRoute><ArchERP /></ProtectedRoute>} />
-          <Route path="/engineering" element={<ProtectedRoute><EngineeringTools /></ProtectedRoute>} />
-          <Route path="/productivity" element={<ProtectedRoute><ProductivityTools /></ProtectedRoute>} />
-          <Route path="/architecture" element={<ProtectedRoute><ArchitectureAnalysis /></ProtectedRoute>} />
-          <Route path="/finance" element={<ProtectedRoute><FinanceAnalysis /></ProtectedRoute>} />
-          <Route path="/finance/module" element={<ProtectedRoute><FinanceModule /></ProtectedRoute>} />
-          <Route path="/tools/contracts" element={<ProtectedRoute><ContractsGenerator /></ProtectedRoute>} />
-          <Route path="/tools/reports" element={<ProtectedRoute><SmartReports /></ProtectedRoute>} />
-          <Route path="/tools/tasks" element={<ProtectedRoute><TaskBoard /></ProtectedRoute>} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/" element={<UserOnly><Index /></UserOnly>} />
+              <Route path="/integrations" element={<AdminOnly><Integrations /></AdminOnly>} />
+              <Route path="/analytics" element={<AdminOnly><Analytics /></AdminOnly>} />
+              <Route path="/settings" element={<AdminOnly><Settings /></AdminOnly>} />
+              <Route path="/whatsapp" element={<AdminOnly><WhatsApp /></AdminOnly>} />
+              <Route path="/azure" element={<AdminOnly><Azure /></AdminOnly>} />
+              <Route path="/azure/settings" element={<AdminOnly><AzureSettings /></AdminOnly>} />
+              <Route path="/azure/vision" element={<AdminOnly><AzureContextPage contextId="vision" /></AdminOnly>} />
+              <Route path="/azure/finance" element={<AdminOnly><AzureContextPage contextId="finance" /></AdminOnly>} />
+              <Route path="/azure/agents/maintenance" element={<AdminOnly><AzureContextPage contextId="maintenance-agent" /></AdminOnly>} />
+              <Route path="/azure/agents/production" element={<AdminOnly><AzureContextPage contextId="production-agent" /></AdminOnly>} />
+              <Route path="/azure/speech" element={<AdminOnly><AzureContextPage contextId="speech-voice" /></AdminOnly>} />
+              <Route path="/services/vision" element={<UserOnly><VisionOCR /></UserOnly>} />
+              <Route path="/services/docint" element={<UserOnly><DocumentIntelligence /></UserOnly>} />
+              <Route path="/services/ai-processing" element={<UserOnly><AIProcessing /></UserOnly>} />
+              <Route path="/services/search" element={<UserOnly><MaintenanceSearch /></UserOnly>} />
+              <Route path="/services/agent" element={<UserOnly><QAAgent /></UserOnly>} />
+              <Route path="/services/arch-erp" element={<AdminOnly><ArchERP /></AdminOnly>} />
+              <Route path="/engineering" element={<UserOnly><EngineeringTools /></UserOnly>} />
+              <Route path="/productivity" element={<UserOnly><ProductivityTools /></UserOnly>} />
+              <Route path="/architecture" element={<AdminOnly><ArchitectureAnalysis /></AdminOnly>} />
+              <Route path="/finance" element={<AdminOnly><FinanceAnalysis /></AdminOnly>} />
+              <Route path="/finance/module" element={<AdminOnly><FinanceModule /></AdminOnly>} />
+              <Route path="/tools/contracts" element={<AdminOnly><ContractsGenerator /></AdminOnly>} />
+              <Route path="/tools/reports" element={<AdminOnly><SmartReports /></AdminOnly>} />
+              <Route path="/tools/tasks" element={<UserOnly><TaskBoard /></UserOnly>} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
       </QueryClientProvider>
     </ThemeProvider>
   </ErrorBoundary>
