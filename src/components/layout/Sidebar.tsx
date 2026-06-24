@@ -10,7 +10,7 @@ import {
   MessageSquare, Settings, BarChart3, Phone, Cloud, Eye, FileSearch, Wand2,
   Search as SearchIcon, Bot, Hammer, Box, LogOut, LogIn, Plus, Trash2, Pencil,
   Check, X, Menu, Sparkles, Building2, Wallet, FileText, CheckSquare,
-  BarChart3 as BarChartIcon,
+  BarChart3 as BarChartIcon, AudioLines,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useChatSession, chatSessionStore } from '@/lib/chat-session-store';
@@ -31,6 +31,7 @@ const NAV_ITEMS: { to: string; icon: any; label: string; badge?: string }[] = [
   { to: '/finance', icon: Wallet, label: 'التحليل المالي' },
   { to: '/architecture', icon: Building2, label: 'تحليل معماري' },
   { to: '/productivity', icon: Sparkles, label: 'أدوات الكتابة' },
+  { to: '/tools/speech', icon: AudioLines, label: 'استوديو الصوت', badge: 'جديد' },
   { to: '/engineering', icon: Box, label: 'الأدوات الهندسية' },
   { to: '/whatsapp', icon: Phone, label: 'واتساب الأعمال' },
   { to: '/azure', icon: Cloud, label: 'أدوات Azure' },

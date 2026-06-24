@@ -27,6 +27,7 @@ import FinanceAnalysis from "./pages/FinanceAnalysis";
 import ContractsGenerator from "./pages/tools/ContractsGenerator";
 import SmartReports from "./pages/tools/SmartReports";
 import TaskBoard from "./pages/tools/TaskBoard";
+import SpeechStudio from "./pages/SpeechStudio";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -61,6 +62,7 @@ const App = () => (
           <Route path="/tools/contracts" element={<ProtectedRoute><ContractsGenerator /></ProtectedRoute>} />
           <Route path="/tools/reports" element={<ProtectedRoute><SmartReports /></ProtectedRoute>} />
           <Route path="/tools/tasks" element={<ProtectedRoute><TaskBoard /></ProtectedRoute>} />
+          <Route path="/tools/speech" element={<ProtectedRoute><SpeechStudio /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
