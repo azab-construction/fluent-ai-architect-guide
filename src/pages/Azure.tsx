@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Sidebar } from '@/components/layout/Sidebar';
+import { MainLayout } from '@/components/layout/MainLayout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -97,9 +97,8 @@ const Azure = () => {
   };
 
   return (
-    <div className="flex h-screen bg-background" dir="rtl">
-      <Sidebar />
-      <div className="flex-1 overflow-auto p-6">
+    <MainLayout>
+      <div className="flex-1 overflow-auto p-6" dir="rtl">
         <div className="max-w-5xl mx-auto space-y-6">
           <div>
             <h1 className="text-2xl font-bold">أدوات Azure AI</h1>
@@ -220,7 +219,7 @@ const Azure = () => {
           </Tabs>
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 };
 

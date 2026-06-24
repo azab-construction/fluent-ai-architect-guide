@@ -1,15 +1,12 @@
 import React from 'react';
 import { ChatInterface } from '@/components/chat/ChatInterface';
-import { Sidebar } from '@/components/layout/Sidebar';
+import { MainLayout } from '@/components/layout/MainLayout';
 
-const Index = () => {
+const Index = (): JSX.Element => {
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar />
-      <div className="flex-1">
-        <ChatInterface />
-      </div>
-    </div>
+    <MainLayout>
+      <ChatInterface />
+    </MainLayout>
   );
 };
 

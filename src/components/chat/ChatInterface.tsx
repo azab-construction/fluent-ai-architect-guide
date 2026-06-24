@@ -257,108 +257,170 @@ export const ChatInterface = () => {
   ];
 
   return (
-    <div className="flex h-screen bg-background w-full">
+    <div className="flex h-screen bg-background w-full flex-col lg:flex-row">
       <div className="flex flex-col flex-1 min-w-0">
-        {/* Slim header */}
-        <header className="border-b bg-card/50 backdrop-blur px-6 py-3 flex items-center justify-between">
-          <div className="min-w-0">
-            <h1 className="text-base font-semibold leading-tight">المساعد الذكي</h1>
-            <p className="text-xs text-muted-foreground">دردشة، تحليل ملفات، وتصميم وحدات</p>
+        {/* Modern Header */}
+        <header className="border-b border-border bg-card px-6 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-semibold text-foreground">المساعد الذكي</h1>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-3">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-xs">
-                  <Sparkles className="w-3.5 h-3.5" /> أدوات سريعة
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  <span className="hidden sm:inline">أدوات</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuContent align="end" className="w-56">
                 {quickCommands.map(s => (
-                  <DropdownMenuItem key={s.cmd}
-                    onClick={() => { setNewMessage(s.cmd); setTimeout(() => handleSendMessage(), 50); }}>
+                  <DropdownMenuItem
+                    key={s.cmd}
+                    onClick={() => {
+                      setNewMessage(s.cmd);
+                      setTimeout(() => handleSendMessage(), 50);
+                    }}
+                  >
                     {s.label}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowApiModal(true)} title="الإعدادات">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setShowApiModal(true)}
+              title="الإعدادات"
+            >
               <Settings className="w-4 h-4" />
             </Button>
           </div>
         </header>
 
         {!isConfigured && (
-          <Alert className="m-4 mb-0">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>يرجى إعداد مزود الذكاء الاصطناعي للبدء.</AlertDescription>
-          </Alert>
+          <div className="m-4 p-4 rounded-lg bg-accent/10 border border-accent/30 flex gap-3">
+            <AlertCircle className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium text-foreground text-sm">إعداد مزود الذكاء الاصطناعي</p>
+              <p className="text-xs text-muted-foreground mt-1">انقر على الإعدادات أعلاه لتبدأ</p>
+            </div>
+          </div>
         )}
 
         <ScrollArea className="flex-1">
-          <div className="px-6 py-6 space-y-5 max-w-3xl mx-auto">
+          <div className="px-4 sm:px-6 py-6 space-y-4 max-w-4xl mx-auto w-full">
             {messages.map((message) => (
-              <div key={message.id} className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`flex gap-2.5 max-w-[85%] ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-gradient-to-br from-ai-primary to-ai-accent text-white'
-                  }`}>
-                    {message.role === 'user' ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
+              <div
+                key={message.id}
+                className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                {message.role === 'assistant' && (
+                  <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0">
+                    <Bot className="w-4 h-4" />
                   </div>
-                  <div className={`rounded-2xl px-4 py-2.5 ${
-                    message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted/50'
+                )}
+                <div className={`flex flex-col gap-2 max-w-[90%] sm:max-w-[75%] ${
+                  message.role === 'user' ? 'items-end' : 'items-start'
+                }`}>
+                  <div className={`rounded-lg px-4 py-3 ${
+                    message.role === 'user'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-secondary text-foreground'
                   }`}>
                     {message.fileName && (
-                      <Badge variant="secondary" className="text-[10px] mb-1.5 gap-1 bg-background/40">
-                        {message.fileName.includes('/') ? <Github className="w-2.5 h-2.5" /> : <FileText className="w-2.5 h-2.5" />}
-                        {message.fileName}
-                      </Badge>
-                    )}
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap" dir="auto">{message.content}</p>
-                    {message.sources && message.sources.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-current/10">
-                        {message.sources.map((source, index) => (
-                          <Badge key={index} variant="secondary" className="text-[10px] bg-background/40">
-                            {getSourceIcon(source.type)}<span className="ml-1">{source.name}</span>
-                          </Badge>
-                        ))}
+                      <div className="flex items-center gap-2 mb-2 pb-2 border-b border-current/20">
+                        {message.fileName.includes('/') ? (
+                          <Github className="w-3.5 h-3.5" />
+                        ) : (
+                          <FileText className="w-3.5 h-3.5" />
+                        )}
+                        <span className="text-xs font-medium">{message.fileName}</span>
                       </div>
                     )}
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap" dir="auto">
+                      {message.content}
+                    </p>
                   </div>
+                  {message.sources && message.sources.length > 0 && (
+                    <div className="flex flex-wrap gap-2 px-2">
+                      {message.sources.map((source, index) => (
+                        <span
+                          key={index}
+                          className="text-xs bg-secondary text-secondary-foreground px-2 py-1 rounded"
+                        >
+                          {getSourceIcon(source.type)} {source.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
+                {message.role === 'user' && (
+                  <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0">
+                    <User className="w-4 h-4" />
+                  </div>
+                )}
               </div>
             ))}
             {isLoading && (
-              <div className="flex gap-2.5 justify-start">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-ai-primary to-ai-accent flex items-center justify-center">
-                  <Bot className="w-3.5 h-3.5 text-white" />
+              <div className="flex gap-3 justify-start">
+                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0">
+                  <Bot className="w-4 h-4" />
                 </div>
-                <div className="rounded-2xl px-4 py-2.5 bg-muted/50 flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-ai-primary" />
-                  <p className="text-xs text-muted-foreground">جاري التحليل...</p>
+                <div className="flex items-center gap-2 bg-secondary rounded-lg px-4 py-3">
+                  <div className="animate-spin rounded-full h-3 w-3 border-2 border-primary border-t-transparent" />
+                  <p className="text-sm text-muted-foreground">جاري الرد...</p>
                 </div>
               </div>
             )}
           </div>
         </ScrollArea>
 
-        <div className="border-t bg-card/50 backdrop-blur px-6 py-3">
-          <div className="max-w-3xl mx-auto">
-            <div className="flex gap-2 items-center bg-background rounded-xl border px-2 py-1.5 focus-within:ring-2 focus-within:ring-primary/20">
-              <FileUploadButton attachedFile={attachedFile} onFileAttached={setAttachedFile} isLoading={isLoading} />
-              {githubConnected && (
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowGitHubBrowser(true)} disabled={isLoading} title="تصفح GitHub">
-                  <Github className="w-4 h-4" />
-                </Button>
-              )}
-              <Input value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
-                placeholder={attachedFile ? "أضف تعليمات للتحليل..." : "اكتب رسالتك هنا..."}
-                dir="auto" onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                className="flex-1 border-0 focus-visible:ring-0 shadow-none bg-transparent" />
-              <Button onClick={handleSendMessage} disabled={(!newMessage.trim() && !attachedFile) || isLoading}
-                size="icon" className="h-8 w-8 bg-gradient-to-br from-ai-primary to-ai-accent hover:opacity-90">
-                <Send className="w-3.5 h-3.5" />
+        <div className="border-t border-border bg-card px-4 sm:px-6 py-4">
+          <div className="max-w-4xl mx-auto w-full">
+            <div className="flex gap-2 items-end bg-secondary rounded-lg border border-border focus-within:ring-2 focus-within:ring-primary/50 transition-all">
+              <div className="flex gap-1 px-3 py-2">
+                <FileUploadButton
+                  attachedFile={attachedFile}
+                  onFileAttached={setAttachedFile}
+                  isLoading={isLoading}
+                />
+                {githubConnected && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowGitHubBrowser(true)}
+                    disabled={isLoading}
+                    title="تصفح GitHub"
+                  >
+                    <Github className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+              <Input
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                placeholder={attachedFile ? "أضف تعليمات..." : "اكتب رسالتك..."}
+                dir="auto"
+                className="flex-1 border-0 focus-visible:ring-0 shadow-none bg-transparent resize-none text-sm py-3"
+                rows={1}
+              />
+              <Button
+                onClick={handleSendMessage}
+                disabled={(!newMessage.trim() && !attachedFile) || isLoading}
+                size="icon"
+                className="h-9 w-9 mx-2 bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Send className="w-4 h-4" />
               </Button>
             </div>
+            {attachedFile && (
+              <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2">
+                <FileText className="w-3.5 h-3.5" />
+                <span>{attachedFile.name}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
