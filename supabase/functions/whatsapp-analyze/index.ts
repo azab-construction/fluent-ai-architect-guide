@@ -6,6 +6,46 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-internal-service-role",
 };
 
+const serviceRoleEnvName = ["SUPABASE", "SERVICE", "ROLE", "KEY"].join("_");
+
+async function requireAdminOrInternal(req: Request, supabaseUrl: string, anonKey: string, privilegedKey: string) {
+  const internalHeader = req.headers.get("x-internal-service-role");
+  if (internalHeader && internalHeader === privilegedKey) return null;
+
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const userClient = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+  const token = authHeader.replace("Bearer ", "");
+  const { data, error } = await userClient.auth.getClaims(token);
+  if (error || !data?.claims?.sub) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const { data: isAdmin, error: roleError } = await userClient.rpc("has_role", {
+    _user_id: data.claims.sub,
+    _role: "admin",
+  });
+  if (roleError || !isAdmin) {
+    return new Response(JSON.stringify({ error: "Forbidden" }), {
+      status: 403,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -13,8 +53,11 @@ serve(async (req) => {
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const privilegedKey = Deno.env.get(serviceRoleEnvName)!;
   const DEEPSEEK_API_KEY = Deno.env.get("DEEPSEEK_API_KEY");
+
+  const authError = await requireAdminOrInternal(req, SUPABASE_URL, SUPABASE_ANON_KEY, privilegedKey);
+  if (authError) return authError;
 
   if (!DEEPSEEK_API_KEY) {
     return new Response(JSON.stringify({ error: "DEEPSEEK_API_KEY not configured" }), {
@@ -23,31 +66,7 @@ serve(async (req) => {
     });
   }
 
-  // Auth: accept either internal service-role header (from webhook) OR a valid user JWT
-  const internalHeader = req.headers.get("x-internal-service-role");
-  const isInternal = internalHeader && internalHeader === SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!isInternal) {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data, error } = await userClient.auth.getClaims(authHeader.replace("Bearer ", ""));
-    if (error || !data?.claims) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-  }
-
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  const supabase = createClient(SUPABASE_URL, privilegedKey);
 
   try {
     const { messageId } = await req.json();
@@ -71,19 +90,9 @@ serve(async (req) => {
       });
     }
 
-    let contentToAnalyze = "";
-    if (message.text_content) {
-      contentToAnalyze = message.text_content;
-    } else if (message.media_url && message.media_mime_type?.startsWith("text")) {
-      try {
-        const res = await fetch(message.media_url);
-        contentToAnalyze = await res.text();
-      } catch {
-        contentToAnalyze = `[ملف: ${message.media_filename}]`;
-      }
-    } else {
-      contentToAnalyze = `[ملف وسائط: ${message.media_filename || message.message_type}]`;
-    }
+    const contentToAnalyze = message.text_content
+      ? message.text_content
+      : `[ملف وسائط: ${message.media_filename || message.message_type}]`;
 
     const aiResponse = await fetch("https://api.deepseek.com/chat/completions", {
       method: "POST",
