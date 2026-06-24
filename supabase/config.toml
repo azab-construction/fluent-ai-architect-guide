@@ -17,3 +17,30 @@ verify_jwt = true
 
 [functions.azure-search]
 verify_jwt = true
+
+[functions.azure-openai-direct]
+verify_jwt = true
+
+[functions.architecture-analyze]
+verify_jwt = true
+
+[functions.contract-generate]
+verify_jwt = true
+
+[functions.report-generate]
+verify_jwt = true
+
+[functions.task-suggest]
+verify_jwt = true
+
+[functions.whatsapp-analyze]
+verify_jwt = true
+
+[functions.whatsapp-messages]
+verify_jwt = true
+
+[functions.whatsapp-media-url]
+verify_jwt = true
+
+[functions.whatsapp-webhook]
+verify_jwt = false
