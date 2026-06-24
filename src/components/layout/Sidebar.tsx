@@ -1,23 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import {
   MessageSquare, Github, HardDrive, Settings, BarChart3, CheckCircle, AlertCircle,
   Settings2, Phone, Cloud, Eye, FileSearch, Wand2, Search as SearchIcon, Bot,
   Hammer, Box, LogOut, Plus, Trash2, Pencil, Check, X, Users, Sparkles, Building2, Wallet,
   FileText, BarChart3 as BarChartIcon, CheckSquare, Calculator
 } from 'lucide-react';
-import { integrationStorage } from '@/lib/integration-storage';
 import { useAuth } from '@/hooks/useAuth';
 import { useChatSession, chatSessionStore } from '@/lib/chat-session-store';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-interface ChatSession { id: string; title: string; updated_at: string; }
+interface ChatSession {
+  id: string;
+  title: string;
+  updated_at: string;
+}
 
 const NAV_ITEMS = [
   { to: '/', icon: MessageSquare, label: 'الدردشة' },
@@ -50,16 +51,15 @@ const SERVICE_ITEMS = [
 ];
 
 const SETTINGS_ITEMS = [
-  { to: '/integrations', icon: Settings, label: 'التكاملات' },
-  { to: '/settings', icon: Settings2, label: 'الإعدادات' },
+  { to: '/settings', icon: Settings, label: 'الإعدادات' },
 ];
 
-export const Sidebar = () => {
+export const Sidebar = (): JSX.Element => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
-  const { sessionId, refreshKey, setSession } = useChatSession();
+  const { sessionId } = useChatSession();
 
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -72,44 +72,31 @@ export const Sidebar = () => {
 
   const loadSessions = async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from('chat_sessions')
-      .select('id,title,updated_at')
-      .order('updated_at', { ascending: false })
-      .limit(50);
-    if (data) setSessions(data as ChatSession[]);
+    setIsLoadingSessions(true);
+    try {
+      const { data } = await supabase
+        .from('chat_sessions')
+        .select('id, title, updated_at')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false })
+        .limit(10);
+      if (data) setSessions(data);
+    } catch (error) {
+      console.error('Failed to load sessions:', error);
+    } finally {
+      setIsLoadingSessions(false);
+    }
   };
-
-  useEffect(() => { loadSessions(); }, [user, refreshKey]);
 
   useEffect(() => {
-    const refresh = () => setIntegrationsStatus({
-      github: integrationStorage.getStatus('github'),
-      drive: integrationStorage.getStatus('drive'),
-      company: integrationStorage.getStatus('company'),
-    });
-    refresh();
-    window.addEventListener('storage', refresh);
-    window.addEventListener('integrations-updated', refresh);
-    return () => {
-      window.removeEventListener('storage', refresh);
-      window.removeEventListener('integrations-updated', refresh);
-    };
-  }, []);
-
-  const handleRename = async (id: string) => {
-    const t = editTitle.trim();
-    if (!t) return;
-    await supabase.from('chat_sessions').update({ title: t }).eq('id', id);
-    setEditingId(null);
     loadSessions();
-  };
+    const interval = setInterval(loadSessions, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
 
-  const handleDelete = async (id: string) => {
-    await supabase.from('chat_messages').delete().eq('session_id', id);
-    await supabase.from('chat_sessions').delete().eq('id', id);
-    if (sessionId === id) setSession(null);
-    loadSessions();
+  const createNewChat = (): void => {
+    chatSessionStore.clearSession();
+    navigate('/');
   };
 
   const filteredSessions = sessions.filter(s =>
@@ -136,34 +123,62 @@ export const Sidebar = () => {
     s === 'connected' ? 'bg-success' : s === 'error' ? 'bg-destructive' : 'bg-muted-foreground/40';
 
   return (
-    <aside className="w-72 h-screen bg-card border-r flex flex-col">
-      {/* Brand */}
-      <div className="px-4 py-3 border-b flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-ai-primary to-ai-accent flex items-center justify-center">
-          <Bot className="w-4 h-4 text-white" />
-        </div>
-        <div className="min-w-0">
-          <h2 className="text-sm font-semibold leading-tight">Alazab AI</h2>
-          <p className="text-[10px] text-muted-foreground">Azure OpenAI Console</p>
-        </div>
-      </div>
+    <>
+      {/* Mobile toggle */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="fixed top-4 left-4 z-40 lg:hidden p-2 hover:bg-secondary rounded-lg transition-colors"
+      >
+        {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+      </button>
 
-      <ScrollArea className="flex-1">
-        <div className="p-2 space-y-0.5">
-          {NAV_ITEMS.map(item => <NavLink key={item.to} {...item} />)}
+      {/* Sidebar */}
+      <aside className={`
+        fixed lg:static top-0 left-0 h-screen w-64 bg-sidebar-background border-r border-sidebar-border
+        transition-all duration-300 z-30
+        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        flex flex-col
+      `}>
+        {/* Header */}
+        <div className="p-6 border-b border-sidebar-border">
+          <h1 className="text-xl font-bold text-sidebar-foreground">
+            Architect AI
+          </h1>
+          <p className="text-xs text-sidebar-accent-foreground mt-1">
+            دليل العمارة الذكي
+          </p>
         </div>
 
-        {/* Chat sessions — only in chat */}
-        {isChat && user && (
-          <div className="px-2 pb-2">
-            <div className="flex items-center justify-between px-2 py-1.5">
-              <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">المحادثات</span>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-6 w-6"
-                onClick={() => setSession(null)}
-                title="محادثة جديدة"
+        {/* Main Navigation */}
+        <nav className="flex-1 overflow-hidden flex flex-col">
+          {/* New Chat Button */}
+          <button
+            onClick={createNewChat}
+            className="
+              m-4 mb-6 px-4 py-3 rounded-lg font-medium
+              bg-primary text-primary-foreground hover:bg-primary/90
+              transition-all duration-200 flex items-center gap-2 justify-center
+            "
+          >
+            <Plus className="w-4 h-4" />
+            جلسة جديدة
+          </button>
+
+          {/* Main Nav Items */}
+          <div className="px-3 space-y-1 mb-6">
+            {NAV_ITEMS.map(({ to, icon: Icon, label, badge }) => (
+              <Link
+                key={to}
+                to={to}
+                onClick={() => setIsOpen(false)}
+                className={`
+                  flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium
+                  transition-all duration-200 text-sm group
+                  ${pathname === to
+                    ? 'bg-sidebar-accent text-sidebar-primary font-semibold'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+                  }
+                `}
               >
                 <Plus className="w-3.5 h-3.5" />
               </Button>
@@ -229,7 +244,6 @@ export const Sidebar = () => {
               ))}
             </div>
           </div>
-        )}
 
 
         <Accordion type="multiple" defaultValue={['services']} className="px-2">
@@ -244,64 +258,70 @@ export const Sidebar = () => {
             </AccordionContent>
           </AccordionItem>
 
-          <AccordionItem value="integrations" className="border-0">
-            <AccordionTrigger className="py-2 px-2 text-[11px] uppercase tracking-wider text-muted-foreground font-medium hover:no-underline">
-              التكاملات
-            </AccordionTrigger>
-            <AccordionContent className="pb-2">
-              <div className="space-y-1 px-1">
-                {[
-                  { id: 'github', icon: Github, label: 'GitHub' },
-                  { id: 'drive', icon: HardDrive, label: 'Google Drive' },
-                  { id: 'company', icon: Users, label: 'خادم الشركة' },
-                ].map(({ id, icon: Icon, label }) => (
-                  <button
-                    key={id}
-                    onClick={() => navigate('/integrations')}
-                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs hover:bg-accent text-left"
-                  >
-                    <Icon className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="flex-1 truncate">{label}</span>
-                    <span className={`w-1.5 h-1.5 rounded-full ${statusDot(integrationsStatus[id])}`} />
-                  </button>
-                ))}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
+        {/* Bottom Section */}
+        <div className="border-t border-sidebar-border p-4 space-y-3">
+          {/* Settings */}
+          {SETTINGS_ITEMS.map(({ to, icon: Icon, label }) => (
+            <Link
+              key={to}
+              to={to}
+              onClick={() => setIsOpen(false)}
+              className={`
+                flex items-center gap-3 px-3 py-2 rounded-lg font-medium
+                transition-all duration-200 text-sm
+                ${pathname === to
+                  ? 'bg-sidebar-accent text-sidebar-primary'
+                  : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+                }
+              `}
+            >
+              <Icon className="w-5 h-5" />
+              <span>{label}</span>
+            </Link>
+          ))}
 
-          <AccordionItem value="settings" className="border-0">
-            <AccordionTrigger className="py-2 px-2 text-[11px] uppercase tracking-wider text-muted-foreground font-medium hover:no-underline">
-              الإعدادات
-            </AccordionTrigger>
-            <AccordionContent className="pb-2">
-              <div className="space-y-0.5">
-                {SETTINGS_ITEMS.map(item => <NavLink key={item.to} {...item} />)}
+          {/* User & Auth */}
+          {user ? (
+            <>
+              <div className="text-xs text-sidebar-foreground px-3 py-2 border-t border-sidebar-accent pt-3">
+                <p className="font-medium truncate">{user.email}</p>
               </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      </ScrollArea>
+              <button
+                onClick={handleLogout}
+                className="
+                  w-full flex items-center gap-3 px-3 py-2 rounded-lg
+                  text-sm text-sidebar-foreground hover:bg-destructive/10
+                  transition-all duration-200
+                "
+              >
+                <LogOut className="w-5 h-5" />
+                <span>تسجيل خروج</span>
+              </button>
+            </>
+          ) : (
+            <Link
+              to="/auth"
+              onClick={() => setIsOpen(false)}
+              className="
+                w-full flex items-center gap-3 px-3 py-2 rounded-lg
+                bg-primary text-primary-foreground font-medium
+                hover:bg-primary/90 transition-all duration-200 text-sm
+              "
+            >
+              <LogIn className="w-5 h-5" />
+              <span>دخول</span>
+            </Link>
+          )}
+        </div>
+      </aside>
 
-      {/* Footer */}
-      <div className="px-3 py-2.5 border-t">
-        {user ? (
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-ai-primary to-ai-accent flex items-center justify-center text-[10px] text-white font-medium">
-              {user.email?.[0]?.toUpperCase()}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium truncate">{user.email}</p>
-              <p className="text-[10px] text-muted-foreground">{isAdmin ? 'مدير' : 'مستخدم'}</p>
-            </div>
-            <Button size="icon" variant="ghost" className="h-7 w-7"
-              onClick={async () => { await signOut(); navigate('/auth'); }} title="خروج">
-              <LogOut className="w-3.5 h-3.5" />
-            </Button>
-          </div>
-        ) : (
-          <p className="text-[10px] text-muted-foreground text-center">v1.0</p>
-        )}
-      </div>
-    </aside>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-20 lg:hidden"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+    </>
   );
 };

@@ -62,6 +62,126 @@ export type Database = {
         }
         Relationships: []
       }
+      azure_ai_integrations: {
+        Row: {
+          agent_id: string | null
+          agent_name: string | null
+          api_path: string | null
+          api_version: string | null
+          apim_base_url: string | null
+          apim_route: string | null
+          auth_type: string | null
+          azure_project_name: string | null
+          azure_resource_name: string | null
+          capabilities: string[]
+          connection_config: Json
+          context_type: string
+          created_at: string
+          created_by: string | null
+          default_temperature: number | null
+          deployment_name: string | null
+          description: string | null
+          display_name: string
+          endpoint_url: string | null
+          foundry_resource_name: string | null
+          id: string
+          integration_key: string
+          is_chat_completion: boolean
+          is_enabled: boolean
+          is_production: boolean
+          is_realtime: boolean
+          last_checked_at: string | null
+          last_health_message: string | null
+          last_health_status: string | null
+          max_tokens: number | null
+          model_id: string | null
+          model_version: string | null
+          region: string | null
+          resource_type: string | null
+          secret_refs: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          agent_name?: string | null
+          api_path?: string | null
+          api_version?: string | null
+          apim_base_url?: string | null
+          apim_route?: string | null
+          auth_type?: string | null
+          azure_project_name?: string | null
+          azure_resource_name?: string | null
+          capabilities?: string[]
+          connection_config?: Json
+          context_type: string
+          created_at?: string
+          created_by?: string | null
+          default_temperature?: number | null
+          deployment_name?: string | null
+          description?: string | null
+          display_name: string
+          endpoint_url?: string | null
+          foundry_resource_name?: string | null
+          id?: string
+          integration_key: string
+          is_chat_completion?: boolean
+          is_enabled?: boolean
+          is_production?: boolean
+          is_realtime?: boolean
+          last_checked_at?: string | null
+          last_health_message?: string | null
+          last_health_status?: string | null
+          max_tokens?: number | null
+          model_id?: string | null
+          model_version?: string | null
+          region?: string | null
+          resource_type?: string | null
+          secret_refs?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          agent_name?: string | null
+          api_path?: string | null
+          api_version?: string | null
+          apim_base_url?: string | null
+          apim_route?: string | null
+          auth_type?: string | null
+          azure_project_name?: string | null
+          azure_resource_name?: string | null
+          capabilities?: string[]
+          connection_config?: Json
+          context_type?: string
+          created_at?: string
+          created_by?: string | null
+          default_temperature?: number | null
+          deployment_name?: string | null
+          description?: string | null
+          display_name?: string
+          endpoint_url?: string | null
+          foundry_resource_name?: string | null
+          id?: string
+          integration_key?: string
+          is_chat_completion?: boolean
+          is_enabled?: boolean
+          is_production?: boolean
+          is_realtime?: boolean
+          last_checked_at?: string | null
+          last_health_message?: string | null
+          last_health_status?: string | null
+          max_tokens?: number | null
+          model_id?: string | null
+          model_version?: string | null
+          region?: string | null
+          resource_type?: string | null
+          secret_refs?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           content: string
@@ -157,6 +277,219 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      finance_daftra_integrations: {
+        Row: {
+          account_identifier: string | null
+          auth_type: string
+          base_url: string | null
+          created_at: string
+          created_by: string | null
+          display_name: string
+          endpoint_map: Json
+          id: string
+          integration_key: string
+          is_enabled: boolean
+          last_health_message: string | null
+          last_health_status: string
+          last_sync_at: string | null
+          secret_refs: Json
+          sync_config: Json
+          tenant_name: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          account_identifier?: string | null
+          auth_type?: string
+          base_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          display_name?: string
+          endpoint_map?: Json
+          id?: string
+          integration_key?: string
+          is_enabled?: boolean
+          last_health_message?: string | null
+          last_health_status?: string
+          last_sync_at?: string | null
+          secret_refs?: Json
+          sync_config?: Json
+          tenant_name?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          account_identifier?: string | null
+          auth_type?: string
+          base_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          display_name?: string
+          endpoint_map?: Json
+          id?: string
+          integration_key?: string
+          is_enabled?: boolean
+          last_health_message?: string | null
+          last_health_status?: string
+          last_sync_at?: string | null
+          secret_refs?: Json
+          sync_config?: Json
+          tenant_name?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      finance_statements: {
+        Row: {
+          agent_deployment_name: string | null
+          agent_model_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          data: Json
+          id: string
+          log_id: string | null
+          narrative_report: string | null
+          period_end: string | null
+          period_start: string | null
+          source: string
+          statement_key: string
+          statement_type: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          agent_deployment_name?: string | null
+          agent_model_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          data?: Json
+          id?: string
+          log_id?: string | null
+          narrative_report?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          source?: string
+          statement_key: string
+          statement_type: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          agent_deployment_name?: string | null
+          agent_model_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          data?: Json
+          id?: string
+          log_id?: string | null
+          narrative_report?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          source?: string
+          statement_key?: string
+          statement_type?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      finance_transactions: {
+        Row: {
+          account_code: string | null
+          attachments: Json
+          category: string | null
+          cost_center: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          daftra_id: string | null
+          daftra_payload: Json
+          description: string | null
+          direction: string
+          discount: number
+          document_no: string | null
+          document_type: string
+          due_date: string | null
+          id: string
+          paid_amount: number
+          party_name: string | null
+          party_type: string | null
+          project_ref: string | null
+          source: string
+          status: string
+          subtotal: number
+          tax: number
+          total: number | null
+          tx_date: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          account_code?: string | null
+          attachments?: Json
+          category?: string | null
+          cost_center?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          daftra_id?: string | null
+          daftra_payload?: Json
+          description?: string | null
+          direction: string
+          discount?: number
+          document_no?: string | null
+          document_type?: string
+          due_date?: string | null
+          id?: string
+          paid_amount?: number
+          party_name?: string | null
+          party_type?: string | null
+          project_ref?: string | null
+          source?: string
+          status?: string
+          subtotal?: number
+          tax?: number
+          total?: number | null
+          tx_date?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          account_code?: string | null
+          attachments?: Json
+          category?: string | null
+          cost_center?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          daftra_id?: string | null
+          daftra_payload?: Json
+          description?: string | null
+          direction?: string
+          discount?: number
+          document_no?: string | null
+          document_type?: string
+          due_date?: string | null
+          id?: string
+          paid_amount?: number
+          party_name?: string | null
+          party_type?: string | null
+          project_ref?: string | null
+          source?: string
+          status?: string
+          subtotal?: number
+          tax?: number
+          total?: number | null
+          tx_date?: string
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
