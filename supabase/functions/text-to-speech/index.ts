@@ -6,7 +6,7 @@ import { withSupabase } from 'npm:@supabase/server';
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
 export default {
-  fetch: withSupabase({ auth: 'user' }, async (req, ctx) => {
+  fetch: withSupabase({ auth: 'user' }, async (req, _ctx) => {
     // ctx.userClaims يحتوي بيانات المستخدم (مفيد للـ metering/quotas لاحقًا)
     // إذا ما في Authorization صحيح، Supabase ستعيد 401 قبل دخول هذا handler (طالما verify_jwt=true)
 
@@ -82,5 +82,5 @@ export default {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-  },
+  }),
 };
