@@ -28,6 +28,7 @@ const NAV_ITEMS: { to: string; icon: any; label: string; badge?: string }[] = [
   { to: '/tools/tasks', icon: CheckSquare, label: 'المهام والمشاريع' },
   { to: '/tools/contracts', icon: FileText, label: 'العقود والمستندات' },
   { to: '/tools/reports', icon: BarChartIcon, label: 'التقارير الذكية' },
+  { to: '/finance/module', icon: Calculator, label: 'موديول المالية' },
   { to: '/finance', icon: Wallet, label: 'التحليل المالي' },
   { to: '/architecture', icon: Building2, label: 'تحليل معماري' },
   { to: '/productivity', icon: Sparkles, label: 'أدوات الكتابة' },
@@ -40,6 +41,11 @@ const NAV_ITEMS: { to: string; icon: any; label: string; badge?: string }[] = [
 ];
 
 const SERVICE_ITEMS = [
+  { to: '/azure/vision', icon: Eye, label: 'Vision · GPT-5.5' },
+  { to: '/azure/finance', icon: Wallet, label: 'Finance · GPT-5.1' },
+  { to: '/azure/agents/maintenance', icon: Hammer, label: 'Maintenance Agent' },
+  { to: '/azure/agents/production', icon: Bot, label: 'Production Agent' },
+  { to: '/azure/speech', icon: Phone, label: 'Speech Voice Live' },
   { to: '/services/vision', icon: Eye, label: 'Vision / OCR' },
   { to: '/services/docint', icon: FileSearch, label: 'Document Intelligence' },
   { to: '/services/ai-processing', icon: Wand2, label: 'AI Processing' },
